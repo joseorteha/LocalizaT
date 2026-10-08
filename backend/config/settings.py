@@ -134,8 +134,12 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 # Inicio de sesión con Google (botón "Continuar con Google"). El ID de cliente
-# es público; si está vacío, el botón simplemente no aparece.
-GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "")
+# es público (va dentro del frontend); por eso puede quedar aquí por defecto.
+# Se puede sobreescribir con la variable GOOGLE_OAUTH_CLIENT_ID (otro proyecto).
+GOOGLE_OAUTH_CLIENT_ID = (
+    os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
+    or "272400437839-pugsqfr08vng1bcas5ortera9jlmt6c1.apps.googleusercontent.com"
+)
 
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "").replace("\\n", "\n")
 VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
