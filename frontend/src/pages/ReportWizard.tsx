@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
+  AlertCircle,
   ArrowLeft,
   ArrowRight,
   Check,
@@ -8,14 +9,16 @@ import {
   EyeOff,
   Globe2,
   HandHeart,
+  History,
   Search,
   ShieldCheck,
 } from "lucide-react";
 import { api, type Kind, type Report } from "../api";
 import { descriptionExample, suggestedSummary } from "../domain";
 import { municipalities, publicRegion } from "../geography";
-import { categories, categoryName, dateLabel, daysAgo, today } from "../lib";
+import { categories, categoryName, dateLabel, daysAgo, newId, today } from "../lib";
 import { useAction } from "../hooks/useAction";
+import { useDraft } from "../hooks/useDraft";
 import { Button, ErrorBox, PageIntro } from "../components/ui";
 import { ObjectArt } from "../components/Art";
 import { PublishDialog } from "../components/PublishDialog";
@@ -24,84 +27,233 @@ import { useApp } from "../context";
 const STEPS = [
   { label: "Qué pasó", hint: "Lo perdiste o lo encontraste" },
   { label: "Cómo es", hint: "Dónde, cuándo y cómo es" },
-  { label: "Revisar y guardar", hint: "Un vistazo antes de enviar" },
+  { label: "Revisar y guardar", hint: "Qué verá la comunidad" },
 ];
+const OTHER_PLACE = "otro";
+const DRAFT_KEY = "localizat:borrador-reporte";
+
+type PublishMode = "basic" | "detailed" | "none";
+type Draft = {
+  requestId: string;
+  kind: Kind;
+  category: string;
+  step: number;
+  description: string;
+  municipality: string;
+  place: string;
+  date: string;
+  publishMode: PublishMode;
+  summary: string;
+  publicArea: string;
+};
+type Field = "description" | "municipality" | "place" | "date" | "clue" | "summary" | "publicArea";
+type Errors = Partial<Record<Field, string>>;
+
+// Lugar que se guarda en el reporte: el detalle que escribió la persona y su municipio.
+function reportArea(form: Draft) {
+  const place = form.place.trim();
+  if (form.municipality === OTHER_PLACE) return place.slice(0, 120);
+  return (place ? `${place}, ${form.municipality}` : form.municipality).slice(0, 120);
+}
+
+function validate(step: number, form: Draft, clue: string): Errors {
+  const errors: Errors = {};
+  if (step === 1) {
+    if (form.description.trim().length < 12)
+      errors.description = "Escribe al menos 12 letras: por ejemplo el color, el tamaño o el material.";
+    if (!form.municipality) errors.municipality = "Elige el municipio, o «Otro lugar de la Sierra».";
+    if (form.municipality === OTHER_PLACE && form.place.trim().length < 3)
+      errors.place = "Escribe dónde fue: la comunidad, el camino o el lugar.";
+    if (!form.date) errors.date = "Elige el día, aunque sea aproximado. Puedes tocar «Hoy» o «Ayer».";
+    else if (form.date > today()) errors.date = "La fecha no puede ser después de hoy.";
+    if (form.kind === "lost" && clue.trim().length < 6)
+      errors.clue = "Escribe un detalle secreto de al menos 6 letras.";
+  }
+  if (step === 2 && form.publishMode === "detailed") {
+    if (form.summary.trim().length < 12) errors.summary = "Escribe al menos 12 letras para el aviso.";
+    if (form.publicArea.trim().length < 3) errors.publicArea = "Escribe una zona general, como el municipio.";
+  }
+  return errors;
+}
+
+// Campo con su etiqueta, ayuda y mensaje de error justo debajo.
+function FieldBox({
+  name,
+  label,
+  hint,
+  error,
+  children,
+}: {
+  name: Field;
+  label: string;
+  hint?: ReactNode;
+  error?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`field ${error ? "field-invalid" : ""}`}>
+      <label htmlFor={`campo-${name}`}>{label}</label>
+      {children}
+      {hint && <small id={`ayuda-${name}`}>{hint}</small>}
+      {error && (
+        <p className="field-error" id={`error-${name}`}>
+          <AlertCircle size={16} aria-hidden="true" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+const fieldProps = (name: Field, errors: Errors, hasHint = true) => ({
+  id: `campo-${name}`,
+  "aria-invalid": errors[name] ? true : undefined,
+  "aria-describedby":
+    [errors[name] && `error-${name}`, hasHint && `ayuda-${name}`].filter(Boolean).join(" ") || undefined,
+});
 
 export function ReportWizard() {
   const [params] = useSearchParams();
-  const [kind, setKind] = useState<Kind>(
-    params.get("kind") === "found" ? "found" : "lost",
-  );
-  const [category, setCategory] = useState("bag");
-  const [step, setStep] = useState(0);
-  const [description, setDescription] = useState("");
-  const [area, setArea] = useState("");
-  const [date, setDate] = useState("");
+  const draft = useDraft<Draft>(DRAFT_KEY, () => ({
+    requestId: newId(),
+    kind: params.get("kind") === "found" ? "found" : "lost",
+    category: "bag",
+    step: 0,
+    description: "",
+    municipality: "",
+    place: "",
+    date: "",
+    publishMode: "basic",
+    summary: "",
+    publicArea: "",
+  }));
+  const form = draft.value;
+  const update = draft.update;
+  // El detalle secreto nunca se guarda en el celular: puede ser compartido.
   const [clue, setClue] = useState("");
-  const [publishNow, setPublishNow] = useState(true);
-  const [detailedNotice, setDetailedNotice] = useState(false);
-  const [municipality, setMunicipality] = useState("");
-  const [summary, setSummary] = useState("");
-  const [publicArea, setPublicArea] = useState("");
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [errors, setErrors] = useState<Errors>({});
+  const [focusField, setFocusField] = useState<Field | null>(null);
+  const [pendingSave, setPendingSave] = useState(false);
   const { busy, error, setError, run } = useAction();
   const [created, setCreated] = useState<Report | null>(null);
   const [publishError, setPublishError] = useState("");
   const [publishing, setPublishing] = useState(false);
   const { user, sessionLoading, openAuth } = useApp();
   const stepRef = useRef<HTMLDivElement>(null);
+  const step = form.step;
+  const hasDraft = draft.restored && (form.description.trim() !== "" || form.place.trim() !== "");
+
+  useEffect(() => {
+    // Un borrador de pérdida se retoma en «Cómo es» para volver a escribir el detalle secreto.
+    if (draft.restored && form.kind === "lost" && step === 2) update({ step: 1 });
+  }, []); // Solo al abrir la página.
   useEffect(() => {
     if (step > 0) {
       stepRef.current?.focus();
       stepRef.current?.scrollIntoView({ block: "start", behavior: "instant" });
     }
   }, [step]);
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (step < 2) {
-      setError("");
-      if (step === 1) {
-        // Propuesta inicial del aviso; la persona puede cambiarla.
-        if (!summary) setSummary(suggestedSummary(kind, category));
-        if (!publicArea) setPublicArea(area.slice(0, 80));
-      }
-      setStep((value) => value + 1);
-      return;
+  useEffect(() => {
+    if (!focusField) return;
+    document.getElementById(`campo-${focusField}`)?.focus();
+    setFocusField(null);
+  }, [focusField, step]);
+  useEffect(() => {
+    // Al terminar de crear la cuenta, el reporte se guarda sin volver a pedirlo.
+    if (pendingSave && user) {
+      setPendingSave(false);
+      save();
     }
-    if (!user) {
-      openAuth(`/reportar?kind=${kind}`, "signup");
-      return;
-    }
+  }, [user, pendingSave]);
+
+  function clearErrors(fields: Field[]) {
+    if (fields.some((field) => errors[field]))
+      setErrors((current) => {
+        const next = { ...current };
+        fields.forEach((field) => delete next[field]);
+        return next;
+      });
+  }
+  function change(changes: Partial<Draft>, fields: Field[] = []) {
+    update(changes);
+    clearErrors(fields);
+  }
+  function showErrors(found: Errors, onStep: number) {
+    setErrors(found);
+    if (onStep !== step) update({ step: onStep });
+    setFocusField(Object.keys(found)[0] as Field);
+  }
+
+  function save() {
+    // Un borrador recuperado pudo quedar incompleto: se revisa todo antes de enviar.
+    const earlier = validate(1, form, clue);
+    if (Object.keys(earlier).length) return showErrors(earlier, 1);
+    const current = validate(2, form, clue);
+    if (Object.keys(current).length) return showErrors(current, 2);
     run(async () => {
       const report = await api.createReport({
-        client_request_id: requestId,
-        kind,
-        category,
-        description,
-        approximate_area: area,
-        occurred_on: date,
-        ownership_clue: kind === "lost" ? clue : "",
+        client_request_id: form.requestId,
+        kind: form.kind,
+        category: form.category,
+        description: form.description.trim(),
+        approximate_area: reportArea(form),
+        occurred_on: form.date,
+        ownership_clue: form.kind === "lost" ? clue.trim() : "",
       });
-      if (!publishNow) {
+      draft.clear();
+      setClue("");
+      if (form.publishMode === "none") {
         setCreated(report);
         return;
       }
       try {
-        const result = detailedNotice
-          ? await api.publish(report.id, summary, publicArea)
-          : await api.publishBasic(report.id, municipality);
+        const result =
+          form.publishMode === "detailed"
+            ? await api.publish(report.id, form.summary.trim(), form.publicArea.trim())
+            : await api.publishBasic(
+                report.id,
+                municipalities.includes(form.municipality as (typeof municipalities)[number])
+                  ? form.municipality
+                  : "",
+              );
         setCreated({ ...report, ...result });
       } catch (caught) {
         // El reporte ya está guardado; solo falta corregir el aviso.
         setCreated(report);
-        setPublishError(
-          caught instanceof Error
-            ? caught.message
-            : "No pudimos enviar tu aviso.",
-        );
+        setPublishError(caught instanceof Error ? caught.message : "No pudimos enviar tu aviso.");
       }
     });
   }
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    const found = validate(step, form, clue);
+    if (Object.keys(found).length) return showErrors(found, step);
+    setErrors({});
+    // Quien ya siguió adelante no necesita el aviso del borrador recuperado.
+    if (hasDraft) draft.dismissRestored();
+    if (step < 2) {
+      if (step === 1)
+        // Propuesta inicial del aviso detallado; la persona puede cambiarla.
+        update({
+          step: 2,
+          summary: form.summary || suggestedSummary(form.kind, form.category),
+          publicArea:
+            form.publicArea ||
+            (form.municipality === OTHER_PLACE ? form.place : form.municipality).slice(0, 80),
+        });
+      else update({ step: step + 1 });
+      return;
+    }
+    if (!user) {
+      setPendingSave(true);
+      openAuth(`/reportar?kind=${form.kind}`, "signup");
+      return;
+    }
+    save();
+  }
+
   if (created)
     return (
       <div className="page-container success-page">
@@ -113,25 +265,22 @@ export function ReportWizard() {
           <p className="next-step-label">¿Qué sigue?</p>
           {created.publication_status === "public" ? (
             <p className="next-step-text">
-              Tu aviso básico ya se ve en los avisos de la comunidad. La
-              descripción completa, tu correo y el detalle de propiedad siguen
-              privados. Si aparece algo parecido, lo verás en tu caso y en
-              Novedades. La devolución requiere verificación humana.
+              Tu aviso ya se ve en la comunidad. Lo demás que escribiste sigue
+              privado. Si aparece algo parecido, te avisaremos en «Novedades»
+              (la campana).
             </p>
           ) : created.publication_status === "pending" ? (
             <p className="next-step-text">
-              Tu reporte está guardado y el aviso está pendiente de revisión.
-              Aparecerá en los avisos públicos si el equipo lo aprueba. Consulta
-              la respuesta en «Novedades» (la campana).
+              Tu aviso está esperando la revisión del equipo. Te avisaremos en
+              «Novedades» (la campana).
               {created.kind === "lost"
                 ? " Si aparece algo parecido, también te avisaremos."
                 : " Mientras tanto, guarda el objeto."}
             </p>
           ) : (
             <p className="next-step-text">
-              Tu reporte queda privado para ti y el equipo. Se compara con otros
-              reportes aunque no publiques. Puedes compartir un aviso general
-              cuando quieras.
+              Tu reporte es privado: solo lo ven tú y el equipo. Aun así lo
+              comparamos con los demás. Puedes publicar un aviso cuando quieras.
             </p>
           )}
           {publishError && <ErrorBox message={publishError} />}
@@ -163,27 +312,45 @@ export function ReportWizard() {
         />
       </div>
     );
+
+  const preview = suggestedSummary(form.kind, form.category);
+  const previewArea = municipalities.includes(form.municipality as (typeof municipalities)[number])
+    ? form.municipality
+    : publicRegion;
   return (
     <div className="page-container">
       <PageIntro
         label="NUEVO REPORTE"
-        title={kind === "lost" ? "Perdí algo" : "Encontré algo"}
-        description="Describe el objeto, revisa qué será público y guarda tu reporte. Solo necesitas una cuenta al guardarlo."
+        title={form.kind === "lost" ? "Perdí algo" : "Encontré algo"}
+        description="Tres pasos cortos. Lo que escribas se guarda en este celular mientras terminas. Solo necesitas una cuenta al final."
       />
+      {hasDraft && (
+        <div className="draft-banner" role="status">
+          <History size={20} aria-hidden="true" />
+          <p>
+            Recuperamos el reporte que dejaste a medias.
+            {form.kind === "lost" && " Por seguridad, vuelve a escribir tu detalle secreto."}
+          </p>
+          <button
+            type="button"
+            className="text-link"
+            onClick={() => {
+              draft.clear();
+              setClue("");
+              setErrors({});
+            }}
+          >
+            Empezar de nuevo
+          </button>
+        </div>
+      )}
       <div className="wizard-layout">
         <aside className="wizard-sidebar">
           <span className="tiny-label">TU REPORTE, PASO A PASO</span>
           <ol>
             {STEPS.map((item, index) => (
-              <li
-                className={
-                  step === index ? "current" : step > index ? "complete" : ""
-                }
-                key={item.label}
-              >
-                <span>
-                  {step > index ? <Check size={16} /> : `0${index + 1}`}
-                </span>
+              <li className={step === index ? "current" : step > index ? "complete" : ""} key={item.label}>
+                <span>{step > index ? <Check size={16} /> : `0${index + 1}`}</span>
                 <div>
                   <strong>{item.label}</strong>
                   <small>{item.hint}</small>
@@ -195,9 +362,8 @@ export function ReportWizard() {
             <EyeOff size={24} />
             <h3>Tú eliges qué compartir.</h3>
             <p>
-              La descripción completa y tu detalle de propiedad son privados
-              para ti y el equipo. El aviso básico puede publicarse al momento;
-              los detalles que escribas para la comunidad se revisan primero.
+              Tu descripción y tu detalle secreto son privados. A la comunidad
+              solo le llega el aviso que tú elijas en el último paso.
             </p>
           </div>
         </aside>
@@ -210,50 +376,34 @@ export function ReportWizard() {
               <span style={{ width: `${((step + 1) / 3) * 100}%` }} />
             </span>
           </div>
-          <form className="form-stack" onSubmit={submit}>
+          <form className="form-stack" onSubmit={submit} noValidate>
             {step === 0 && (
               <>
                 <h2>¿Qué te pasó?</h2>
                 <div className="kind-choices">
-                  <button
-                    type="button"
-                    aria-pressed={kind === "lost"}
-                    onClick={() => setKind("lost")}
-                  >
+                  <button type="button" aria-pressed={form.kind === "lost"} onClick={() => change({ kind: "lost" })}>
                     <Search size={25} />
                     <strong>Perdí algo</strong>
                     <span>Lo estoy buscando.</span>
-                    <span className="choice-check">
-                      {kind === "lost" && <Check size={13} />}
-                    </span>
+                    <span className="choice-check">{form.kind === "lost" && <Check size={13} />}</span>
                   </button>
-                  <button
-                    type="button"
-                    aria-pressed={kind === "found"}
-                    onClick={() => setKind("found")}
-                  >
+                  <button type="button" aria-pressed={form.kind === "found"} onClick={() => change({ kind: "found" })}>
                     <HandHeart size={26} />
                     <strong>Encontré algo</strong>
                     <span>Quiero devolverlo.</span>
-                    <span className="choice-check">
-                      {kind === "found" && <Check size={13} />}
-                    </span>
+                    <span className="choice-check">{form.kind === "found" && <Check size={13} />}</span>
                   </button>
                 </div>
                 <p className="category-heading" id="category-label">
                   ¿Qué tipo de objeto es?
                 </p>
-                <div
-                  className="category-choices"
-                  role="group"
-                  aria-labelledby="category-label"
-                >
+                <div className="category-choices" role="group" aria-labelledby="category-label">
                   {categories.map((item) => (
                     <button
                       type="button"
-                      aria-pressed={category === item.value}
+                      aria-pressed={form.category === item.value}
                       key={item.value}
-                      onClick={() => setCategory(item.value)}
+                      onClick={() => change({ category: item.value })}
                     >
                       <ObjectArt category={item.value} />
                       <span>{item.label}</span>
@@ -261,7 +411,7 @@ export function ReportWizard() {
                   ))}
                 </div>
                 <p className="hint">
-                  No reportes credenciales, documentos ni celulares: por ahora
+                  Por ahora no recibimos credenciales, documentos ni celulares;
                   solo objetos como mochilas, ropa, libros o accesorios.
                 </p>
               </>
@@ -269,73 +419,112 @@ export function ReportWizard() {
             {step === 1 && (
               <>
                 <h2>
-                  {kind === "lost"
-                    ? "Cuéntanos cómo es lo que perdiste"
-                    : "Cuéntanos cómo es lo que encontraste"}
+                  {form.kind === "lost" ? "Cuéntanos cómo es lo que perdiste" : "Cuéntanos cómo es lo que encontraste"}
                 </h2>
-                <label>
-                  ¿Cómo es?
+                <FieldBox
+                  name="description"
+                  label="¿Cómo es?"
+                  error={errors.description}
+                  hint={`Color, tamaño, material. No se publica. ${form.description.trim().length}/300`}
+                >
                   <textarea
-                    value={description}
-                    onChange={(event) => setDescription(event.target.value)}
-                    required
-                    minLength={12}
+                    {...fieldProps("description", errors)}
+                    value={form.description}
+                    onChange={(event) => change({ description: event.target.value }, ["description"])}
                     maxLength={300}
                     rows={3}
-                    placeholder={descriptionExample(category)}
+                    placeholder={descriptionExample(form.category)}
                   />
-                  <small>Color, tamaño, material. Esto no se publica.</small>
-                </label>
+                </FieldBox>
                 <div className="form-columns">
-                  <label>
-                    ¿Dónde?
+                  <FieldBox
+                    name="municipality"
+                    label="¿En qué municipio?"
+                    error={errors.municipality}
+                    hint="Si no estás seguro, elige el más cercano."
+                  >
+                    <select
+                      {...fieldProps("municipality", errors)}
+                      value={form.municipality}
+                      onChange={(event) => change({ municipality: event.target.value }, ["municipality", "place"])}
+                    >
+                      <option value="">Elige el municipio</option>
+                      {municipalities.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                      <option value={OTHER_PLACE}>Otro lugar de la Sierra</option>
+                    </select>
+                  </FieldBox>
+                  <FieldBox
+                    name="place"
+                    label={form.municipality === OTHER_PLACE ? "¿Dónde fue?" : "¿Dónde exactamente? (opcional)"}
+                    error={errors.place}
+                    hint="Ej.: el mercado, la cancha, el camino a la escuela. Sin dirección exacta."
+                  >
                     <input
-                      value={area}
-                      onChange={(event) => setArea(event.target.value)}
-                      minLength={3}
-                      maxLength={120}
-                      required
-                      placeholder="Ej.: mercado de Tequila"
+                      {...fieldProps("place", errors)}
+                      value={form.place}
+                      onChange={(event) => change({ place: event.target.value }, ["place"])}
+                      maxLength={90}
+                      autoComplete="off"
                     />
-                    <small>El lugar o camino, sin dirección exacta.</small>
-                  </label>
-                  <label>
-                    ¿Qué día, más o menos?
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(event) => setDate(event.target.value)}
-                      max={today()}
-                      required
-                    />
-                    <span className="quick-dates">
-                      <button type="button" onClick={() => setDate(today())}>
-                        Hoy
-                      </button>
-                      <button type="button" onClick={() => setDate(daysAgo(1))}>
-                        Ayer
-                      </button>
-                    </span>
-                  </label>
+                  </FieldBox>
                 </div>
-                {kind === "lost" ? (
-                  <label>
-                    Tu detalle secreto
+                <FieldBox
+                  name="date"
+                  label="¿Qué día, más o menos?"
+                  error={errors.date}
+                  hint={form.date ? `Elegiste: ${dateLabel(form.date)}` : undefined}
+                >
+                  <div className="date-row">
+                    <span className="quick-dates" role="group" aria-label="Elegir un día rápido">
+                      {[
+                        ["Hoy", today()],
+                        ["Ayer", daysAgo(1)],
+                        ["Antier", daysAgo(2)],
+                      ].map(([label, value]) => (
+                        <button
+                          key={label}
+                          type="button"
+                          aria-pressed={form.date === value}
+                          onClick={() => change({ date: value }, ["date"])}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </span>
+                    <input
+                      {...fieldProps("date", errors, Boolean(form.date))}
+                      type="date"
+                      value={form.date}
+                      onChange={(event) => change({ date: event.target.value }, ["date"])}
+                      max={today()}
+                      aria-label="Otro día"
+                    />
+                  </div>
+                </FieldBox>
+                {form.kind === "lost" ? (
+                  <FieldBox
+                    name="clue"
+                    label="Tu detalle secreto"
+                    error={errors.clue}
+                    hint="Algo que solo la persona dueña sabe. No se publica ni se guarda en este celular; el equipo lo usa para comprobar que es tuyo."
+                  >
                     <textarea
+                      {...fieldProps("clue", errors)}
                       value={clue}
-                      onChange={(event) => setClue(event.target.value)}
-                      required
-                      minLength={6}
+                      onChange={(event) => {
+                        setClue(event.target.value);
+                        clearErrors(["clue"]);
+                      }}
                       maxLength={500}
                       rows={3}
+                      autoComplete="off"
                       placeholder="Ej.: tiene mi nombre escrito por dentro; traía un cuaderno verde"
                     />
-                    <small>
-                      Algo que solo la persona dueña sabe. El equipo autorizado
-                      puede consultarlo para revisar tu propiedad; no se
-                      publica.
-                    </small>
-                  </label>
+                  </FieldBox>
                 ) : (
                   <div className="privacy-note">
                     <HandHeart size={23} />
@@ -349,157 +538,120 @@ export function ReportWizard() {
             )}
             {step === 2 && (
               <>
-                <h2>Revisa que todo esté bien</h2>
+                <h2>Revisa y elige qué verá la comunidad</h2>
                 <div className="review-summary">
-                  <ObjectArt category={category} />
+                  <ObjectArt category={form.category} />
                   <div>
-                    <span className="tiny-label">
-                      {kind === "lost" ? "LO PERDISTE" : "LO ENCONTRASTE"}
-                    </span>
-                    <h3>{description}</h3>
+                    <span className="tiny-label">{form.kind === "lost" ? "LO PERDISTE" : "LO ENCONTRASTE"}</span>
+                    <h3>{form.description}</h3>
                     <p>
-                      {categoryName(category)} · {area} ·{" "}
-                      {date ? dateLabel(date) : ""}
+                      {categoryName(form.category)} · {reportArea(form)} · {form.date ? dateLabel(form.date) : ""}
                     </p>
                   </div>
+                  <button type="button" className="text-link" onClick={() => update({ step: 1 })}>
+                    Cambiar
+                  </button>
                 </div>
-                {kind === "lost" && (
+                <fieldset className="choice-cards">
+                  <legend>¿Qué quieres que vea la comunidad?</legend>
+                  <label className="choice-card">
+                    <input
+                      type="radio"
+                      name="publishMode"
+                      checked={form.publishMode === "basic"}
+                      onChange={() => change({ publishMode: "basic" }, ["summary", "publicArea"])}
+                    />
+                    <span>
+                      <strong>Un aviso básico, al momento (recomendado)</strong>
+                      <small>
+                        Se verá: «{preview}» · {previewArea}. Nada de lo que escribiste.
+                      </small>
+                    </span>
+                  </label>
+                  <label className="choice-card">
+                    <input
+                      type="radio"
+                      name="publishMode"
+                      checked={form.publishMode === "detailed"}
+                      onChange={() => change({ publishMode: "detailed" })}
+                    />
+                    <span>
+                      <strong>Un aviso con mis palabras</strong>
+                      <small>Puedes añadir el color o la zona. El equipo lo revisa antes de mostrarlo.</small>
+                    </span>
+                  </label>
+                  {form.publishMode === "detailed" && (
+                    <div className="choice-detail">
+                      <FieldBox
+                        name="summary"
+                        label="¿Qué dirá el aviso?"
+                        error={errors.summary}
+                        hint="Algo general, como el color. Sin teléfono ni el detalle secreto."
+                      >
+                        <input
+                          {...fieldProps("summary", errors)}
+                          value={form.summary}
+                          onChange={(event) => change({ summary: event.target.value }, ["summary"])}
+                          maxLength={160}
+                        />
+                      </FieldBox>
+                      <FieldBox
+                        name="publicArea"
+                        label="¿En qué zona?"
+                        error={errors.publicArea}
+                        hint="Una zona general, no la dirección exacta."
+                      >
+                        <input
+                          {...fieldProps("publicArea", errors)}
+                          value={form.publicArea}
+                          onChange={(event) => change({ publicArea: event.target.value }, ["publicArea"])}
+                          maxLength={80}
+                        />
+                      </FieldBox>
+                    </div>
+                  )}
+                  <label className="choice-card">
+                    <input
+                      type="radio"
+                      name="publishMode"
+                      checked={form.publishMode === "none"}
+                      onChange={() => change({ publishMode: "none" }, ["summary", "publicArea"])}
+                    />
+                    <span>
+                      <strong>Nada por ahora</strong>
+                      <small>Tu reporte queda privado, pero igual lo comparamos con los demás.</small>
+                    </span>
+                  </label>
+                </fieldset>
+                {form.kind === "lost" && (
                   <p className="hint with-icon">
                     <ShieldCheck size={16} />
                     Tu detalle secreto se guarda aparte y nunca se publica.
                   </p>
                 )}
-                <div className="publish-choice">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={publishNow}
-                      onChange={(event) => setPublishNow(event.target.checked)}
-                    />
-                    Que la comunidad vea un aviso (recomendado)
-                  </label>
-                  {publishNow && (
-                    <>
-                      <label className="checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={detailedNotice}
-                          onChange={(event) => setDetailedNotice(event.target.checked)}
-                        />
-                        Quiero añadir detalles al aviso
-                      </label>
-                      {detailedNotice ? (
-                        <p className="hint">El equipo revisará el texto y la zona antes de publicarlos.</p>
-                      ) : (
-                        <>
-                          <label>
-                            Municipio general del aviso (opcional)
-                            <select value={municipality} onChange={(event) => setMunicipality(event.target.value)}>
-                              <option value="">Toda la Sierra / no especificar</option>
-                              {municipalities.map((name) => <option key={name} value={name}>{name}</option>)}
-                            </select>
-                            <small>El punto del mapa representa la cabecera municipal, no el lugar exacto del objeto.</small>
-                          </label>
-                          <p className="hint">
-                            Se publicará al momento: «{suggestedSummary(kind, category)}» · {municipality || publicRegion}.
-                            Los detalles que escribiste en el reporte quedan privados.
-                          </p>
-                        </>
-                      )}
-                      {detailedNotice && (
-                        <>
-                      <label>
-                        ¿Qué dirá el aviso?
-                        <input
-                          value={summary}
-                          onChange={(event) => setSummary(event.target.value)}
-                          minLength={12}
-                          maxLength={160}
-                          required
-                        />
-                        <small>
-                          Algo general, como el color. Sin teléfono ni el
-                          detalle secreto.
-                        </small>
-                      </label>
-                      <label>
-                        ¿En qué zona?
-                        <input
-                          value={publicArea}
-                          onChange={(event) =>
-                            setPublicArea(event.target.value)
-                          }
-                          minLength={3}
-                          maxLength={80}
-                          required
-                        />
-                      </label>
-                      <p className="hint">
-                        Una persona del equipo revisa cada aviso antes de
-                        mostrarlo.
-                      </p>
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
-                <div className="privacy-map">
-                  <div>
-                    <EyeOff size={18} />
-                    <strong>Privado</strong>
-                    <p>
-                      Descripción completa, detalle de propiedad y correo. Los
-                      ve tu cuenta y el equipo autorizado.
-                    </p>
-                  </div>
-                  <div>
-                    <Globe2 size={18} />
-                    <strong>
-                      {publishNow
-                        ? detailedNotice ? "Aviso para revisión" : "Aviso inmediato"
-                        : "Sin aviso público"}
-                    </strong>
-                    <p>
-                      {publishNow
-                        ? detailedNotice
-                          ? "Solo el resumen, la zona general, el tipo de objeto y la fecha, si el equipo lo aprueba."
-                          : `Se mostrarán el tipo de objeto, la fecha y «${municipality || publicRegion}». El resto queda privado.`
-                        : "Puedes pedir su publicación después. La comparación de reportes sigue disponible."}
-                    </p>
-                  </div>
-                </div>
                 {!user && (
                   <p className="account-save-hint">
-                    Antes de guardar, crea una cuenta o entra a la tuya. Al
-                    cerrar esa ventana, tu formulario seguirá aquí. Después toca
-                    «Guardar mi reporte».
+                    Para guardar te pediremos una cuenta (solo correo y
+                    contraseña). Al crearla, tu reporte se guarda solo.
                   </p>
                 )}
               </>
             )}
+            {Object.keys(errors).length > 1 && (
+              <p className="form-error-summary" role="alert">
+                Revisa {Object.keys(errors).length} campos marcados en rojo.
+              </p>
+            )}
             {error && <ErrorBox message={error} />}
             <div className="wizard-buttons">
               {step > 0 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  disabled={busy}
-                  onClick={() => setStep((value) => value - 1)}
-                >
+                <Button type="button" variant="ghost" disabled={busy} onClick={() => update({ step: step - 1 })}>
                   <ArrowLeft size={17} />
                   Atrás
                 </Button>
               )}
-              <Button
-                type="submit"
-                busy={busy}
-                disabled={step === 2 && sessionLoading}
-              >
-                {step === 2
-                  ? user
-                    ? "Guardar mi reporte"
-                    : "Continuar con mi cuenta"
-                  : "Siguiente"}
+              <Button type="submit" busy={busy} disabled={step === 2 && sessionLoading}>
+                {step === 2 ? (user ? "Guardar mi reporte" : "Crear cuenta y guardar") : "Siguiente"}
                 <ArrowRight size={18} />
               </Button>
             </div>
