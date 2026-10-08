@@ -52,7 +52,7 @@ capturas. Usa la nueva en el `.env.prod` del servidor.
 ## Parte C · Dominio gratis (DuckDNS)
 
 1. Entra a https://www.duckdns.org con tu cuenta de Google/GitHub.
-2. Crea un subdominio, por ejemplo `localizat-sierra` → quedará `localizat-sierra.duckdns.org`.
+2. Crea un subdominio, por ejemplo `localizat` → quedará `localizat.duckdns.org`.
 3. En el campo **current ip**, pon la **IP pública de tu servidor Oracle** y guarda.
 
 ---
@@ -71,11 +71,11 @@ nano .env.prod
 ```
 
 Rellena `.env.prod` con:
-- `DOMAIN=localizat-sierra.duckdns.org` (el tuyo)
+- `DOMAIN=localizat.duckdns.org` (el tuyo)
 - `DATABASE_URL=` la cadena **nueva** de Neon
 - `DJANGO_SECRET_KEY=` genera una con `openssl rand -hex 32`
-- `DJANGO_ALLOWED_HOSTS=localizat-sierra.duckdns.org`
-- `DJANGO_CSRF_TRUSTED_ORIGINS=https://TU-APP.vercel.app,https://localizat-sierra.duckdns.org`
+- `DJANGO_ALLOWED_HOSTS=localizat.duckdns.org`
+- `DJANGO_CSRF_TRUSTED_ORIGINS=https://TU-APP.vercel.app,https://localizat.duckdns.org`
   (el dominio de Vercel lo tendrás en la Parte E; puedes volver a editarlo luego)
 
 Levanta todo:
@@ -92,9 +92,9 @@ docker compose -f compose.prod.yaml exec api python manage.py createsuperuser
 
 Prueba que el backend responde:
 ```bash
-curl https://localizat-sierra.duckdns.org/api/health/
+curl https://localizat.duckdns.org/api/health/
 ```
-Debe contestar `ok`. Entra también a `https://localizat-sierra.duckdns.org/admin` y
+Debe contestar `ok`. Entra también a `https://localizat.duckdns.org/admin` y
 da de alta los **puntos de custodia** y las cuentas del equipo.
 
 ---
