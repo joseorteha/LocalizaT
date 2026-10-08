@@ -3,3 +3,4 @@ djangorestframework>=3.16,<3.17
 psycopg[binary]>=3.2,<3.3
 gunicorn>=23,<24
 pywebpush>=2.0,<3
+fastembed>=0.7,<0.8

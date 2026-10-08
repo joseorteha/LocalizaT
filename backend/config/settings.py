@@ -98,3 +98,9 @@ CSRF_COOKIE_SECURE = not DEBUG
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "").replace("\\n", "\n")
 VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
 VAPID_SUBJECT = os.environ.get("VAPID_SUBJECT", "mailto:admin@localizat.example")
+
+# Coincidencias: "rules" (palabras exactas) o "semantic" (palabras normalizadas
+# más un modelo de lenguaje local). Comparar ambos con `manage.py evaluate_matching`.
+MATCHING_ENGINE = os.environ.get("MATCHING_ENGINE", "rules")
+MATCHING_MODEL = os.environ.get("MATCHING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+MATCHING_MODEL_CACHE = os.environ.get("MATCHING_MODEL_CACHE", str(BASE_DIR / ".models"))
