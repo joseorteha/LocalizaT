@@ -295,9 +295,9 @@ export function PublicDetail() {
         {sent ? (
           <div className="form-stack">
             <p>
-              No tienes que hacer nada más por ahora. Te avisaremos en
-              «Novedades» (la campana) cuando el equipo responda. Por ahora
-              debes volver a la plataforma; no enviamos correo ni SMS.
+              Tu solicitud quedó registrada. Consulta la respuesta del equipo
+              en «Novedades» (la campana) o en Mi espacio. Puedes activar avisos
+              en este dispositivo; no enviamos correo ni SMS.
             </p>
             <Link
               className="btn btn-primary"

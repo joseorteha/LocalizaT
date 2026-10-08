@@ -38,14 +38,14 @@ export function Home() {
     },
     {
       number: "02",
-      title: "Te avisamos si aparece.",
-      text: "Usamos un poco de inteligencia artificial para comparar tu descripción con las demás, aunque estén escritas con otras palabras. Si algo se parece, te avisamos.",
+      title: "Revisa posibles coincidencias.",
+      text: "Comparamos los reportes con ayuda de IA, incluso si describen el objeto con otras palabras. Si encontramos un parecido, lo verás en Mi espacio. Tú decides si corresponde al tuyo.",
       icon: Sparkle,
     },
     {
       number: "03",
-      title: "Coordinamos la devolución.",
-      text: "Si reconoces un hallazgo, envía un detalle privado. El equipo revisa la propiedad y coordina la entrega. La persona dueña confirma cuando lo recibe.",
+      title: "Verificamos antes de entregar.",
+      text: "Si reconoces un hallazgo, solicita la devolución con un detalle que no aparezca en el aviso. El equipo revisa la solicitud y, si la aprueba, ayuda a coordinar la entrega.",
       icon: HeartHandshake,
     },
   ];
@@ -67,8 +67,9 @@ export function Home() {
           </h1>
           <div>
             <p className="hero-description">
-              Reporta y busca objetos perdidos en la Sierra de Zongolica. Si
-              encontraste algo, ayuda a que vuelva con su dueño.
+              Busca lo que perdiste o reporta lo que encontraste en la Sierra de
+              Zongolica. Aquí puedes seguir tu caso y ayudar a que un objeto
+              vuelva a su dueño.
             </p>
             <div className="hero-actions">
               <Link className="btn btn-primary" to="/reportar?kind=lost">
@@ -85,7 +86,8 @@ export function Home() {
             <div className="hero-trust">
               <ShieldCheck size={17} />
               <span>
-                El aviso es público; tu contacto y tus detalles privados no.
+                Tú eliges si compartes un aviso. Tu correo y tu detalle secreto
+                no se publican.
               </span>
             </div>
           </div>
@@ -109,9 +111,9 @@ export function Home() {
               </h2>
             </div>
             <p>
-              La app encuentra lo que se parece.
+              La app sugiere posibles coincidencias.
               <br />
-              Entre vecinos logramos que vuelva.
+              Las personas comprueban y coordinan la devolución.
             </p>
           </Reveal>
           <div className="steps-grid">
@@ -178,11 +180,11 @@ export function Home() {
         ) : (
           <div className="home-empty">
             <EmptyState
-              title="El próximo aviso puede ser el tuyo."
-              text="Todavía no hay avisos. Si perdiste o encontraste algo, publícalo aquí para que lo vea la comunidad."
+              title="Todavía no hay avisos."
+              text="Si perdiste o encontraste algo, registra un reporte. Al final podrás elegir si compartes un aviso con la comunidad."
             >
               <Link to="/reportar" className="text-link">
-                Publicar el primer aviso <ArrowRight size={17} />
+                Crear un reporte <ArrowRight size={17} />
               </Link>
             </EmptyState>
             <div className="home-empty-side">
@@ -233,10 +235,9 @@ export function Home() {
           <details>
             <summary>¿Cómo sé si apareció algo parecido?</summary>
             <p>
-              Entra a Mi espacio y abre tu reporte para consultar las
-              coincidencias. Las actualizaciones también aparecen en Novedades,
-              en la campana. Por ahora debes volver a la plataforma: no enviamos
-              correo ni SMS.
+              Entra a Mi espacio y abre tu reporte para consultar posibles
+              coincidencias. Las novedades aparecen en la campana. También
+              puedes activar avisos en este dispositivo; no enviamos correo ni SMS.
             </p>
           </details>
           <details>

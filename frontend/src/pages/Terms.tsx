@@ -14,7 +14,7 @@ export function Terms() {
       <PageIntro
         label="LAS REGLAS"
         title="Condiciones del servicio"
-        description="LocalizaT es un esfuerzo comunitario, sin fines de lucro, para ayudar a que lo perdido vuelva con su dueño en la Sierra de Zongolica. Al usar la plataforma, aceptas estas condiciones."
+        description="LocalizaT es un proyecto comunitario en desarrollo para ayudar a reportar y buscar objetos en la Sierra de Zongolica. Estas son las reglas de uso de la plataforma."
       />
       <article className="legal-prose">
         <p className="legal-updated">Última actualización: 8 de octubre de 2026.</p>
@@ -48,8 +48,8 @@ export function Terms() {
         <h2>Coincidencias y devoluciones</h2>
         <p>
           Una coincidencia es solo un parecido entre dos reportes, no una prueba
-          de propiedad. Antes de coordinar una entrega, el equipo revisa que el
-          objeto de verdad sea tuyo, usando el detalle secreto.
+          de propiedad. Antes de coordinar una entrega, el equipo evalúa la
+          solicitud y los detalles privados para decidir si procede.
         </p>
         <p>
           LocalizaT ayuda a conectar a las personas, pero no garantiza que
@@ -65,7 +65,7 @@ export function Terms() {
 
         <h2>Revisión y suspensión</h2>
         <p>
-          Para cuidar a la comunidad, el equipo puede revisar, editar u ocultar
+          Para cuidar a la comunidad, el equipo puede revisar, rechazar u ocultar
           avisos que no cumplan estas reglas, y suspender cuentas que hagan mal
           uso o pongan en riesgo a otras personas.
         </p>

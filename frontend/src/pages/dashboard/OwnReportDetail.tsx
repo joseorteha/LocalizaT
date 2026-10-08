@@ -227,7 +227,7 @@ export function OwnReportDetail() {
               <h3>Todavía no aparece nada parecido.</h3>
               <p>
                 {report.publication_status === "public"
-                  ? "Comparamos cada reporte nuevo con el tuyo y te avisaremos aquí."
+                  ? "Seguiremos comparando reportes. Si aparece un parecido, podrás revisarlo aquí; también consulta Novedades."
                   : "Tu reporte se compara con los demás aunque no publiques. Un aviso público permite que más personas ayuden."}
               </p>
               <Link className="text-link" to="/explorar">

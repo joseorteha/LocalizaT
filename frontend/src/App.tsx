@@ -95,7 +95,7 @@ function Protected({
       <div className="page-container">
         <EmptyState
           title="Necesitas una cuenta"
-          text="Con tu cuenta guardas tus reportes y te avisamos cuando haya noticias. Solo pedimos un correo."
+          text="Con una cuenta puedes guardar reportes, consultar posibles coincidencias y seguir cada solicitud. Puedes crearla con correo y contraseña o continuar con Google."
         >
           <div className="empty-actions">
             <Button
@@ -179,8 +179,8 @@ function AuthDialog({
       title={mode === "signup" ? "Crear mi cuenta" : "Entrar a mi cuenta"}
       description={
         mode === "signup"
-          ? "Solo necesitas un correo y una contraseña. Así guardamos tus reportes y te avisamos."
-          : "Escribe el correo y la contraseña que usaste al crear tu cuenta."
+          ? "Crea tu cuenta con correo y contraseña o continúa con Google. Así podrás seguir tus reportes y solicitudes."
+          : "Entra con tu correo y contraseña, o continúa con Google."
       }
     >
       <div className="auth-mark">

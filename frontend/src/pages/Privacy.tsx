@@ -14,7 +14,7 @@ export function Privacy() {
       <PageIntro
         label="TUS DATOS"
         title="Aviso de privacidad"
-        description="LocalizaT es un proyecto comunitario, sin fines de lucro, para reportar y buscar objetos perdidos y encontrados en la Sierra de Zongolica. Aquí te contamos, en palabras claras, qué datos te pedimos y cómo los cuidamos."
+        description="LocalizaT es un proyecto comunitario en desarrollo para reportar y buscar objetos perdidos y encontrados en la Sierra de Zongolica. Aquí explicamos qué información usa la plataforma y quién puede verla."
       />
       <article className="legal-prose">
         <p className="legal-updated">Última actualización: 8 de octubre de 2026.</p>
@@ -22,7 +22,8 @@ export function Privacy() {
         <h2>Qué información guardamos</h2>
         <ul>
           <li>
-            <strong>Tu correo.</strong> Para crear tu cuenta y poder avisarte.
+            <strong>Tu correo.</strong> Para identificar tu cuenta y responder a
+            solicitudes relacionadas con ella.
             Si entras con Google, recibimos tu correo y tu nombre; nunca vemos tu
             contraseña de Google.
           </li>
@@ -36,32 +37,36 @@ export function Privacy() {
             equipo para comprobar que el objeto es tuyo.
           </li>
           <li>
-            <strong>Datos mínimos para que la app funcione,</strong> como la
-            sesión que mantiene tu inicio de sesión activo.
+            <strong>Datos de uso necesarios para el servicio,</strong> como la
+            sesión que mantiene tu inicio de sesión activo y, si activas avisos,
+            la suscripción de este navegador.
           </li>
         </ul>
 
         <h2>Para qué los usamos</h2>
         <ul>
-          <li>Comparar tu reporte con los demás y avisarte si aparece algo parecido.</li>
+          <li>Comparar reportes y mostrarte posibles coincidencias.</li>
           <li>Coordinar la devolución y comprobar quién es la persona dueña.</li>
           <li>Mantener tu cuenta y tu sesión.</li>
         </ul>
         <p>
-          No vendemos tus datos, no los usamos para publicidad ni los
-          compartimos con nadie fuera de lo necesario para que LocalizaT
-          funcione.
+          No usamos tus reportes para publicidad. Para operar la plataforma
+          utilizamos servicios de alojamiento y, si tú lo eliges, el acceso con
+          Google y los avisos del navegador.
         </p>
 
         <h2>Qué es público y qué es privado</h2>
         <p>
-          <strong>Público:</strong> solo el aviso que tú decides compartir, con
-          datos generales (tipo de objeto, zona general y fecha). Los dibujos son
-          de referencia, no fotos reales.
+          <strong>Público:</strong> únicamente si decides compartir un aviso. El
+          aviso básico muestra el tipo de objeto y una zona general; si propones
+          un texto más detallado, el equipo lo revisa antes de publicarlo. La
+          fecha también aparece en el aviso. Los dibujos son ilustraciones.
         </p>
         <p>
-          <strong>Privado:</strong> tu correo, tu descripción completa, tu detalle
-          secreto y tu contacto. Nada de eso se muestra a la comunidad.
+          <strong>Fuera del aviso público:</strong> tu correo, la descripción
+          completa del reporte, el detalle secreto y la información de una
+          solicitud de devolución. El acceso se limita a las funciones
+          necesarias para dar seguimiento y verificar la propiedad.
         </p>
 
         <h2>Inicio de sesión con Google</h2>
@@ -74,34 +79,39 @@ export function Privacy() {
 
         <h2>Avisos en tu teléfono</h2>
         <p>
-          Si activas las notificaciones, usamos una suscripción de tu navegador
-          para avisarte cuando haya una posible coincidencia. Puedes desactivarlas
-          cuando quieras desde «Mi espacio».
+          Si activas los avisos en un dispositivo, guardamos la suscripción de
+          ese navegador para enviar posibles coincidencias. Los avisos pasan por
+          el servicio de notificaciones del navegador. Puedes desactivarlos en
+          «Mi espacio» desde ese mismo dispositivo.
         </p>
 
         <h2>Dónde se guardan</h2>
         <p>
-          Tus datos viajan siempre por una conexión segura (HTTPS) y se guardan en
-          servidores de nube que usamos solo para operar LocalizaT. Aplicamos
-          medidas razonables para protegerlos.
+          En el sitio público, la conexión usa HTTPS. Los datos de la plataforma
+          se alojan en servicios de infraestructura que usamos para operarla.
+          Limitamos el acceso a los reportes privados al equipo autorizado.
         </p>
 
         <h2>Por cuánto tiempo</h2>
         <p>
-          Guardamos tu información mientras tengas cuenta o un reporte activo.
-          Puedes pedirnos que borremos tu cuenta y tus datos cuando quieras.
+          Conservamos la información necesaria para dar seguimiento a tu cuenta,
+          reportes y solicitudes. Si ya no quieres usar LocalizaT, puedes pedir
+          la cancelación de tus datos por correo; revisaremos la solicitud y te
+          diremos qué información debe conservarse por obligaciones aplicables.
         </p>
 
         <h2>Tus derechos</h2>
         <p>
-          Puedes pedirnos acceder, corregir o borrar tu información. Escríbenos a{" "}
-          <a href={`mailto:${CONTACTO}`}>{CONTACTO}</a> y te ayudamos.
+          Puedes solicitar acceso, rectificación, cancelación u oposición al uso
+          de tus datos. Escríbenos desde el correo de tu cuenta a{" "}
+          <a href={`mailto:${CONTACTO}`}>{CONTACTO}</a> e indica qué necesitas;
+          verificaremos que la cuenta sea tuya antes de responder.
         </p>
 
         <h2>Cambios a este aviso</h2>
         <p>
-          Si cambiamos algo importante, actualizaremos esta página y la fecha de
-          arriba. Al seguir usando LocalizaT, aceptas la versión vigente.
+          Si cambiamos cómo usamos los datos, actualizaremos esta página y su
+          fecha. Los cambios importantes se comunicarán en la plataforma.
         </p>
 
         <h2>Contacto</h2>
