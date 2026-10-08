@@ -1,16 +1,15 @@
 # Despliegue de LocalizaT (todo gratis)
 
-Tres piezas, todas sin costo:
+Dos piezas, todas sin costo (fuera del VPS de ~$5/mes):
 
 | Pieza | Servicio | Qué corre ahí |
 |---|---|---|
-| **Frontend** | Vercel | La app de React (lo que ve la gente) |
-| **Backend + IA** | Contabo (Cloud VPS 4, 8 GB) | Django + worker con la IA semántica |
+| **Frontend + Backend + IA** | Contabo (Cloud VPS 4, 8 GB) | Caddy sirve la app de React y reenvía `/api` a Django + worker con la IA |
 | **Base de datos** | Neon | Postgres |
 
-La clave: **Vercel reenvía todo lo que empieza con `/api` al backend (Contabo)**
-(ver `frontend/vercel.json`). Así el navegador cree que todo es un mismo sitio
-y las cookies de inicio de sesión funcionan sin problemas.
+Todo vive en **un solo dominio** (`localizat.duckdns.org`): Caddy sirve el
+frontend compilado y manda `/api`, `/admin` y `/static` a Django. Al ser el mismo
+dominio, las cookies de inicio de sesión funcionan sin complicaciones.
 
 ---
 
@@ -53,7 +52,7 @@ capturas. Usa la nueva en el `.env.prod` del servidor.
 
 1. Entra a https://www.duckdns.org con tu cuenta de Google/GitHub.
 2. Crea un subdominio, por ejemplo `localizat` → quedará `localizat.duckdns.org`.
-3. En el campo **current ip**, pon la **IP pública de tu servidor Oracle** y guarda.
+3. En el campo **current ip**, pon la **IP pública de tu servidor Contabo** y guarda.
 
 ---
 
@@ -75,50 +74,39 @@ Rellena `.env.prod` con:
 - `DATABASE_URL=` la cadena **nueva** de Neon
 - `DJANGO_SECRET_KEY=` genera una con `openssl rand -hex 32`
 - `DJANGO_ALLOWED_HOSTS=localizat.duckdns.org`
-- `DJANGO_CSRF_TRUSTED_ORIGINS=https://TU-APP.vercel.app,https://localizat.duckdns.org`
-  (el dominio de Vercel lo tendrás en la Parte E; puedes volver a editarlo luego)
+- `DJANGO_CSRF_TRUSTED_ORIGINS=https://localizat.duckdns.org`
 
 Levanta todo:
 ```bash
 docker compose -f compose.prod.yaml up -d --build
 ```
-La primera vez tarda varios minutos (compila e instala la IA). El worker
-descarga el modelo (~220 MB) la primera vez que arranca.
+La primera vez tarda varios minutos (compila el frontend, instala la IA). El
+worker descarga el modelo (~220 MB) la primera vez que arranca.
 
 Crea tu usuario administrador:
 ```bash
 docker compose -f compose.prod.yaml exec api python manage.py createsuperuser
 ```
 
-Prueba que el backend responde:
+Prueba que responde:
 ```bash
 curl https://localizat.duckdns.org/api/health/
 ```
-Debe contestar `ok`. Entra también a `https://localizat.duckdns.org/admin` y
-da de alta los **puntos de custodia** y las cuentas del equipo.
+Debe contestar `ok`. Con eso, **la app completa ya está en vivo** en
+`https://localizat.duckdns.org` (Caddy sirve el frontend y reenvía `/api`).
+
+Crea tu usuario administrador y da de alta los datos iniciales:
+```bash
+docker compose -f compose.prod.yaml exec api python manage.py createsuperuser
+```
+Entra a `https://localizat.duckdns.org/admin` y registra los **puntos de
+custodia** y las cuentas del equipo.
 
 ---
 
-## Parte E · Frontend (Vercel)
+## Parte E · Probar
 
-1. **Antes de subir**, edita `frontend/vercel.json` y cambia `TU-BACKEND.duckdns.org`
-   por tu dominio real de DuckDNS. (Haz commit de ese cambio.)
-2. En https://vercel.com entra con GitHub e **importa** el repo `LocalizaT`.
-3. En la configuración del proyecto:
-   - **Root Directory:** `frontend`
-   - Framework: Vite (lo detecta solo)
-4. **Deploy**. Al terminar te da una URL tipo `https://localizat-xxxx.vercel.app`.
-5. Copia esa URL y ponla en `DJANGO_CSRF_TRUSTED_ORIGINS` dentro del `.env.prod`
-   del servidor; luego reinicia el backend:
-   ```bash
-   docker compose -f compose.prod.yaml up -d
-   ```
-
----
-
-## Parte F · Probar
-
-Desde el celular, abre tu URL de Vercel:
+Desde el celular, abre **https://localizat.duckdns.org**:
 - Inicia sesión (debe funcionar sin errores).
 - Haz un reporte de prueba y revisa que aparezcan coincidencias (eso usa la IA).
 - El navegador debe ofrecerte **instalar LocalizaT** con el ícono nuevo.
@@ -131,10 +119,12 @@ Desde el celular, abre tu URL de Vercel:
   pooling* y usa la cadena **directa** (sin `-pooler`) en `DATABASE_URL`.
 - **Error de autenticación de la base:** quita `&channel_binding=require` del final
   de `DATABASE_URL`.
-- **La página de Vercel no habla con el backend:** revisa que el dominio en
-  `frontend/vercel.json` esté bien escrito y que `curl .../api/health/` responda.
-- **El backend no abre en el navegador:** revisa el cortafuegos del servidor
-  (Parte B, paso 4) y que Docker esté corriendo (`docker compose -f compose.prod.yaml ps`).
+- **La app no abre en el navegador:** revisa el cortafuegos del servidor
+  (Parte B, paso 4), que el dominio DuckDNS apunte a la IP correcta, y que todo
+  esté corriendo (`docker compose -f compose.prod.yaml ps`).
+- **Caddy no saca el certificado HTTPS:** casi siempre es que DuckDNS no apunta
+  aún a la IP del servidor, o que el puerto 80/443 está cerrado. Mira los logs:
+  `docker compose -f compose.prod.yaml logs caddy`.
 
 ---
 
