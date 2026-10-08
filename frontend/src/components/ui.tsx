@@ -1,6 +1,10 @@
-import type { ReactNode, ButtonHTMLAttributes } from "react";
+import {
+  useEffect,
+  useRef,
+  type ReactNode,
+  type ButtonHTMLAttributes,
+} from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { motion, useReducedMotion } from "motion/react";
 import {
   ArrowUpRight,
   CalendarDays,
@@ -13,7 +17,7 @@ import {
 import { Link } from "react-router-dom";
 import type { PublicReport } from "../api";
 import type { CaseProgress, StatusDomain } from "../domain";
-import { categoryName, dateLabel, statusName } from "../lib";
+import { categoryName, dateLabel, newId, statusName } from "../lib";
 import { ObjectArt } from "./Art";
 
 // Una sola etiqueta con la situación del caso en palabras sencillas.
@@ -84,6 +88,33 @@ export function Button({
     </button>
   );
 }
+// En el celular, el botón «Atrás» debe cerrar la ventana abierta en lugar de
+// sacar a la persona de la página (y de lo que estaba escribiendo).
+function useBackButtonCloses(open: boolean, close: () => void) {
+  const closeRef = useRef(close);
+  closeRef.current = close;
+  useEffect(() => {
+    if (!open) return;
+    const marker = newId();
+    window.history.pushState(
+      { ...window.history.state, localizatModal: marker },
+      "",
+    );
+    const onPop = () => closeRef.current();
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      // Si se cerró con la X, Escape o un botón, retiramos la entrada que
+      // agregamos. Se comprueba después de un instante: si mientras tanto la
+      // ventana llevó a otra página, no se retrocede.
+      window.setTimeout(() => {
+        if (window.history.state?.localizatModal === marker)
+          window.history.back();
+      }, 0);
+    };
+  }, [open]);
+}
+
 export function Modal({
   open,
   onOpenChange,
@@ -91,6 +122,7 @@ export function Modal({
   description,
   children,
   wide = false,
+  closeOnBack = true,
 }: {
   open: boolean;
   onOpenChange: (value: boolean) => void;
@@ -98,14 +130,16 @@ export function Modal({
   description?: string;
   children: ReactNode;
   wide?: boolean;
+  // Desactivar si la ventana ya depende de la dirección (p. ej. ?claim=3).
+  closeOnBack?: boolean;
 }) {
+  useBackButtonCloses(open && closeOnBack, () => onOpenChange(false));
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
         <Dialog.Content
           className={`dialog-content ${wide ? "dialog-wide" : ""}`}
-          data-lenis-prevent
         >
           <Dialog.Title className="dialog-title">{title}</Dialog.Title>
           <Dialog.Description className="dialog-description">
@@ -123,27 +157,17 @@ export function Modal({
     </Dialog.Root>
   );
 }
+// Aparición suave al bajar, hecha solo con CSS (ver .reveal en styles.css): el
+// navegador la liga al desplazamiento. Sin JavaScript de por medio, el contenido
+// nunca puede quedarse oculto; donde no hay soporte, simplemente se ve.
 export function Reveal({
   children,
   className = "",
-  delay = 0,
 }: {
   children: ReactNode;
   className?: string;
-  delay?: number;
 }) {
-  const reduced = useReducedMotion();
-  return (
-    <motion.div
-      className={className}
-      initial={reduced ? false : { opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.08 }}
-      transition={{ duration: 0.65, delay, ease: [0.22, 1, 0.36, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
+  return <div className={`${className} reveal`}>{children}</div>;
 }
 export function PageIntro({
   label,
@@ -239,6 +263,7 @@ export function PublicCard({ report }: { report: PublicReport }) {
     <Link
       className={`public-card category-${report.category}`}
       to={`/avisos/${report.id}`}
+      viewTransition
     >
       <div className="public-card-art">
         <span className={`kind-pill kind-${report.kind}`}>

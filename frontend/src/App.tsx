@@ -14,9 +14,6 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import Lenis from "lenis";
-import "lenis/dist/lenis.css";
 import {
   AlertCircle,
   ArrowRight,
@@ -27,13 +24,18 @@ import {
   EyeOff,
   LogOut,
   Menu,
+  Moon,
   Plus,
+  Sun,
   UserRound,
+  WifiOff,
   X,
 } from "lucide-react";
 import { api, type User } from "./api";
 import { SessionContext, useApp } from "./context";
 import { useAction } from "./hooks/useAction";
+import { useOnline, usePrefersReducedMotion } from "./lib";
+import { useTheme } from "./theme";
 import { Button, EmptyState, ErrorBox, Modal } from "./components/ui";
 const Home = lazy(() =>
   import("./pages/Home").then((module) => ({ default: module.Home })),
@@ -256,7 +258,10 @@ export default function App() {
   const [unreadVersion, setUnreadVersion] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
-  const reduced = useReducedMotion();
+  const reduced = usePrefersReducedMotion();
+  const online = useOnline();
+  const { theme, toggle: toggleTheme } = useTheme();
+  const themeLabel = theme === "dark" ? "Usar modo claro" : "Usar modo oscuro";
   const toast = (message: string, kind: "success" | "error" = "success") => {
     setNoticeKind(kind);
     setNotice(message);
@@ -300,10 +305,12 @@ export default function App() {
     };
   }, [user, location.pathname, unreadVersion]);
   useEffect(() => {
-    if (!notice) return;
-    const timer = window.setTimeout(() => setNotice(""), 6000);
+    // Las confirmaciones se van solas; los errores se quedan hasta cerrarlos,
+    // para que nadie se pierda un problema por leer despacio.
+    if (!notice || noticeKind === "error") return;
+    const timer = window.setTimeout(() => setNotice(""), 7000);
     return () => clearTimeout(timer);
-  }, [notice]);
+  }, [notice, noticeKind]);
   useEffect(() => {
     setMenuOpen(false);
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -322,17 +329,8 @@ export default function App() {
           ? "Mi caso"
           : "Página no encontrada");
     document.title = `${title} · LocalizaT`;
+    document.body.classList.toggle("is-focused-task", location.pathname === "/reportar");
   }, [location.pathname]);
-  useEffect(() => {
-    if (reduced || location.pathname !== "/") return;
-    const lenis = new Lenis({
-      autoRaf: true,
-      anchors: { offset: -100 },
-      lerp: 0.11,
-      prevent: (node) => node.hasAttribute("data-lenis-prevent"),
-    });
-    return () => lenis.destroy();
-  }, [reduced, location.pathname]);
   async function signOut() {
     try {
       const { disablePush } = await import("./push");
@@ -364,16 +362,27 @@ export default function App() {
       <a className="skip-link" href="#main">
         Saltar al contenido
       </a>
+      {!online && (
+        <div className="offline-banner" role="status">
+          <WifiOff size={18} />
+          <span>
+            Sin conexión. Lo que escribas en un reporte se guarda en este
+            celular; envíalo cuando vuelva la señal.
+          </span>
+        </div>
+      )}
       <header className="site-header">
         <div className="header-inner">
-          <Link className="brand-link" to="/" aria-label="LocalizaT, inicio">
-            <img src="/localizat-logo.svg" alt="LocalizaT" />
+          <Link className="brand-link" to="/" aria-label="LocalizaT, inicio" viewTransition>
+            {/* En oscuro se usa la versión clara del logo. */}
+            <img className="logo-light" src="/localizat-logo.svg" alt="LocalizaT" />
+            <img className="logo-dark" src="/localizat-logo-claro.svg" alt="" aria-hidden="true" />
           </Link>
           <nav className="desktop-nav" aria-label="Navegación principal">
-            <NavLink to="/" end>
+            <NavLink to="/" end viewTransition>
               Inicio
             </NavLink>
-            <NavLink to="/explorar">Explorar avisos</NavLink>
+            <NavLink to="/explorar" viewTransition>Explorar avisos</NavLink>
             <Link
               to="/#como-funciona"
               onClick={(event) => {
@@ -389,6 +398,15 @@ export default function App() {
             </Link>
           </nav>
           <div className="header-actions">
+            <button
+              type="button"
+              className="icon-button theme-toggle"
+              onClick={toggleTheme}
+              aria-label={themeLabel}
+              title={themeLabel}
+            >
+              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
             {user ? (
               <>
                 <Link
@@ -444,6 +462,10 @@ export default function App() {
             {user && (user.is_staff || user.is_point_member) && (
               <Link to="/operacion">Panel del equipo</Link>
             )}
+            <button onClick={toggleTheme}>
+              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+              {themeLabel}
+            </button>
             {user && <button onClick={signOut}>Cerrar sesión</button>}
           </nav>
         )}
@@ -506,7 +528,7 @@ export default function App() {
       <footer className="site-footer">
         <div className="footer-top">
           <Link to="/" className="footer-logo">
-            <img src="/logo-negativo.svg" alt="LocalizaT" />
+            <img src="/localizat-logo-claro.svg" alt="LocalizaT" />
           </Link>
           <p>
             Lo encontrado puede volver.
@@ -530,15 +552,15 @@ export default function App() {
         </div>
       </footer>
       <nav className="bottom-nav" aria-label="Accesos rápidos">
-        <NavLink to="/explorar">
+        <NavLink to="/explorar" viewTransition>
           <Compass size={20} />
           Explorar
         </NavLink>
-        <NavLink to="/reportar" className="bottom-create">
+        <NavLink to="/reportar" className="bottom-create" viewTransition>
           <Plus size={23} />
           Reportar
         </NavLink>
-        <NavLink to="/mi-espacio">
+        <NavLink to="/mi-espacio" viewTransition>
           <UserRound size={20} />
           Mi espacio
         </NavLink>
@@ -558,14 +580,11 @@ export default function App() {
           );
         }}
       />
-      <AnimatePresence>
-        {notice && (
-          <motion.div
+      {notice && (
+          <div
+            key={notice}
             className={`toast ${noticeKind === "error" ? "toast-error" : ""}`}
             role={noticeKind === "error" ? "alert" : "status"}
-            initial={reduced ? false : { y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ opacity: 0 }}
           >
             {noticeKind === "error" ? (
               <AlertCircle size={18} />
@@ -580,9 +599,8 @@ export default function App() {
             >
               <X size={17} />
             </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+      )}
     </SessionContext.Provider>
   );
 }
