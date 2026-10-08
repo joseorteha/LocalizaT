@@ -1361,3 +1361,28 @@ input[type="radio"] {
     min-height: 52px;
   }
 }
+
+/* ---------- Botón "Continuar con Google" (en el cuadro de inicio de sesión) --- */
+.google-signin {
+  margin-top: 4px;
+}
+.google-signin-sep {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 14px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.google-signin-sep::before,
+.google-signin-sep::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.google-signin-btn {
+  display: flex;
+  justify-content: center;
+  min-height: 40px;
+}

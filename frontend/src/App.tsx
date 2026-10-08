@@ -1,6 +1,7 @@
 import {
   lazy,
   Suspense,
+  useCallback,
   useEffect,
   useState,
   type FormEvent,
@@ -32,6 +33,7 @@ import {
   X,
 } from "lucide-react";
 import { api, type User } from "./api";
+import { GoogleButton } from "./GoogleButton";
 import { SessionContext, useApp } from "./context";
 import { useAction } from "./hooks/useAction";
 import { useOnline, usePrefersReducedMotion } from "./lib";
@@ -158,6 +160,14 @@ function AuthDialog({
       onSuccess(result.user, current);
     });
   }
+  const onGoogle = useCallback(
+    (credential: string) =>
+      run(async () => {
+        const result = await api.googleLogin(credential);
+        onSuccess(result.user, mode === "signup" ? "signup" : "login");
+      }),
+    [run, onSuccess, mode],
+  );
   return (
     <Modal
       open={mode !== null}
@@ -233,6 +243,7 @@ function AuthDialog({
           <ArrowRight size={17} />
         </Button>
       </form>
+      <GoogleButton onToken={onGoogle} onError={setError} />
       <p className="auth-switch">
         {mode === "signup" ? "¿Ya tienes cuenta?" : "¿No tienes cuenta?"}{" "}
         <button
