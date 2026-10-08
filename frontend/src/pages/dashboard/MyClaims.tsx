@@ -80,6 +80,8 @@ export function MyClaims() {
         </section>
       )}
       <ClaimDialog
+        // La dirección (?claim=) ya decide si está abierta.
+        closeOnBack={false}
         claimId={selected}
         onClose={() => selectClaim(null)}
         onUpdated={load.reload}
