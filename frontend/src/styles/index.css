@@ -1,0 +1,12 @@
+/* LocalizaT · sistema de diseño
+   El orden importa: primero los tokens, luego la base, la estructura y los
+   componentes, y al final lo propio de cada pantalla. */
+@import "./tokens.css";
+@import "./base.css";
+@import "./layout.css";
+@import "./components.css";
+@import "./home.css";
+@import "./explore.css";
+@import "./report.css";
+@import "./dashboard.css";
+@import "./operations.css";
