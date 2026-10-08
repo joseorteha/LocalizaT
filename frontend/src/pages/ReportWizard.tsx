@@ -265,16 +265,16 @@ export function ReportWizard() {
           <p className="next-step-label">¿Qué sigue?</p>
           {created.publication_status === "public" ? (
             <p className="next-step-text">
-              Tu aviso ya se ve en la comunidad. Lo demás que escribiste sigue
-              privado. Si aparece algo parecido, te avisaremos en «Novedades»
-              (la campana).
+              Tu aviso ya se ve en la comunidad. Tu descripción completa y tu
+              detalle secreto siguen privados. Revisa las posibles coincidencias
+              en Mi espacio y las actualizaciones en «Novedades».
             </p>
           ) : created.publication_status === "pending" ? (
             <p className="next-step-text">
-              Tu aviso está esperando la revisión del equipo. Te avisaremos en
-              «Novedades» (la campana).
+              Tu aviso detallado espera la revisión del equipo. Consulta el
+              resultado en «Novedades» (la campana).
               {created.kind === "lost"
-                ? " Si aparece algo parecido, también te avisaremos."
+                ? " Mientras tanto, tu reporte puede generar posibles coincidencias."
                 : " Mientras tanto, guarda el objeto."}
             </p>
           ) : (
@@ -322,7 +322,7 @@ export function ReportWizard() {
       <PageIntro
         label="NUEVO REPORTE"
         title={form.kind === "lost" ? "Perdí algo" : "Encontré algo"}
-        description="Tres pasos cortos. Lo que escribas se guarda en este celular mientras terminas. Solo necesitas una cuenta al final."
+        description="Son tres pasos. Guardamos un borrador en este dispositivo mientras terminas, excepto tu detalle secreto. Al final necesitarás una cuenta para enviar el reporte."
       />
       {hasDraft && (
         <div className="draft-banner" role="status">
@@ -564,7 +564,8 @@ export function ReportWizard() {
                     <span>
                       <strong>Un aviso básico, al momento (recomendado)</strong>
                       <small>
-                        Se verá: «{preview}» · {previewArea}. Nada de lo que escribiste.
+                        Se verá: «{preview}» · {previewArea}. Tu descripción y
+                        tu detalle secreto no se publican.
                       </small>
                     </span>
                   </label>
@@ -631,8 +632,9 @@ export function ReportWizard() {
                 )}
                 {!user && (
                   <p className="account-save-hint">
-                    Para guardar te pediremos una cuenta (solo correo y
-                    contraseña). Al crearla, tu reporte se guarda solo.
+                    Para guardar necesitarás una cuenta. Puedes crearla con
+                    correo y contraseña o continuar con Google; después se
+                    enviará este reporte.
                   </p>
                 )}
               </>
@@ -651,7 +653,7 @@ export function ReportWizard() {
                 </Button>
               )}
               <Button type="submit" busy={busy} disabled={step === 2 && sessionLoading}>
-                {step === 2 ? (user ? "Guardar mi reporte" : "Crear cuenta y guardar") : "Siguiente"}
+                {step === 2 ? (user ? "Guardar mi reporte" : "Continuar para guardar") : "Siguiente"}
                 <ArrowRight size={18} />
               </Button>
             </div>

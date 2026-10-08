@@ -1,0 +1,25 @@
+# Caddy saca y renueva solo el certificado HTTPS (Let's Encrypt) para el
+# dominio de DOMAIN (.env.prod). Sirve el frontend compilado y reenvía la API,
+# el panel /admin y sus estáticos a Django. Todo en un mismo dominio, por eso
+# las cookies de sesión funcionan sin complicaciones.
+{$DOMAIN} {
+	encode gzip zstd
+
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+	handle /admin/* {
+		reverse_proxy api:8000
+	}
+	handle /static/* {
+		reverse_proxy api:8000
+	}
+
+	# El resto es el frontend (app de React). try_files permite recargar en
+	# rutas como /explorar sin que dé 404.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

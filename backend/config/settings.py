@@ -34,6 +34,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Sirve los estáticos del panel /admin en producción (comprimidos, sin un
+    # servidor web aparte). En desarrollo no estorba.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -60,6 +63,25 @@ AUTH_USER_MODEL = "accounts.User"
 
 if os.environ.get("TEST_DB_ENGINE") == "sqlite":
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "test-local.sqlite3"}}
+elif os.environ.get("DATABASE_URL"):
+    # Los servicios administrados (Neon, etc.) entregan la conexión en una sola
+    # variable DATABASE_URL. La partimos en los campos que pide Django y pasamos
+    # sslmode/channel_binding tal como vienen en la cadena de Neon.
+    import urllib.parse as _urlparse
+
+    _url = _urlparse.urlparse(os.environ["DATABASE_URL"])
+    _query = _urlparse.parse_qs(_url.query)
+    _options = {key: _query[key][0] for key in ("sslmode", "channel_binding") if key in _query}
+    DATABASES = {"default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": _url.path.lstrip("/"),
+        "USER": _urlparse.unquote(_url.username or ""),
+        "PASSWORD": _urlparse.unquote(_url.password or ""),
+        "HOST": _url.hostname or "",
+        "PORT": str(_url.port or ""),
+        "OPTIONS": _options,
+        "CONN_MAX_AGE": 0,
+    }}
 else:
     DATABASES = {"default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -89,12 +111,36 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    # WhiteNoise comprime los estáticos; sin manifiesto para no romper /admin en desarrollo.
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+
+# En producción el tráfico llega por HTTPS a través de un proxy (Caddy, y antes
+# Vercel). Django confía en la cabecera que pone el proxy para saber que la
+# conexión original fue segura. Caddy ya obliga HTTPS, así que no redirigimos
+# aquí (evita bucles detrás del proxy).
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = False
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+# Inicio de sesión con Google (botón "Continuar con Google"). El ID de cliente
+# es público (va dentro del frontend); por eso puede quedar aquí por defecto.
+# Se puede sobreescribir con la variable GOOGLE_OAUTH_CLIENT_ID (otro proyecto).
+GOOGLE_OAUTH_CLIENT_ID = (
+    os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
+    or "272400437839-pugsqfr08vng1bcas5ortera9jlmt6c1.apps.googleusercontent.com"
+)
+
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "").replace("\\n", "\n")
 VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
 VAPID_SUBJECT = os.environ.get("VAPID_SUBJECT", "mailto:admin@localizat.example")

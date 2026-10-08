@@ -210,7 +210,7 @@ def notify_visible_matches(report):
         Notification.objects.create(
             recipient=counterpart.owner, kind=Notification.Kind.MATCH,
             title="Posible coincidencia",
-            body="Hay un reporte público compatible para revisar. No confirma la propiedad.", report=counterpart,
+            body="Hay un aviso público que podría corresponder a tu reporte. Revísalo en Mi espacio; el parecido no confirma que sea el mismo objeto.", report=counterpart,
         )
 
 
@@ -288,7 +288,7 @@ class PublicationReviewView(APIView):
         record(actor=request.user, action=f"publication.{decision}", obj=report)
         Notification.objects.create(
             recipient=report.owner, kind=Notification.Kind.PUBLICATION,
-            title="Estado de publicación", body=f"Tu aviso cambió a: {report.get_publication_status_display()}.", report=report,
+            title="Revisamos tu aviso", body=f"El estado de tu aviso es: {report.get_publication_status_display()}. Abre tu reporte para ver el motivo y el siguiente paso.", report=report,
         )
         if decision == "approve":
             notify_visible_matches(report)

@@ -118,7 +118,7 @@ class HandoverView(APIView):
         report = Report.objects.select_for_update().get(pk=claim_ref.found_report_id)
         claim = Claim.objects.select_for_update().select_related("claimant").get(pk=claim_id)
         if claim.status != Claim.Status.APPROVED or report.status != Report.Status.RESERVED:
-            return Response({"error": "No existe una reclamación aprobada disponible para entrega."}, status=409)
+            return Response({"error": "No hay una solicitud aprobada disponible para iniciar la entrega."}, status=409)
         if Handover.objects.filter(report=report).exists():
             return Response({"error": "La entrega ya fue iniciada."}, status=409)
         point = None
@@ -135,7 +135,7 @@ class HandoverView(APIView):
                                             action=CustodyEvent.Action.HANDOVER_STARTED, note="Entrega iniciada; falta confirmación del reclamante.")
         record(actor=request.user, action="handover.started", obj=handover)
         Notification.objects.create(recipient=claim.claimant, kind=Notification.Kind.HANDOVER,
-                                    title="Confirma la recepción", body="Confirma en LocalizaT únicamente después de recibir el objeto.", report=report)
+                                    title="Confirma cuando tengas el objeto", body="La entrega se inició. Confirma en LocalizaT solo después de recibir el objeto y comprobar que es tuyo.", report=report)
         return Response({"handover_id": handover.pk, "status": handover.status}, status=201)
 
 
@@ -164,7 +164,7 @@ class ConfirmHandoverView(APIView):
                                             action=CustodyEvent.Action.HANDOVER_CONFIRMED, note="Recepción confirmada por la cuenta reclamante.")
         record(actor=request.user, action="handover.confirmed", obj=handover)
         Notification.objects.create(recipient=report.owner, kind=Notification.Kind.HANDOVER,
-                                    title="Entrega confirmada", body="La cuenta reclamante confirmó la recepción del objeto.", report=report)
+                                    title="La entrega fue confirmada", body="La persona que solicitó la devolución confirmó que recibió el objeto.", report=report)
         return Response({"status": handover.status, "report_status": report.status})
 
 

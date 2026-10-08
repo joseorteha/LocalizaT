@@ -1361,3 +1361,77 @@ input[type="radio"] {
     min-height: 52px;
   }
 }
+
+/* ---------- Botón "Continuar con Google" (en el cuadro de inicio de sesión) --- */
+.google-signin {
+  margin-top: 4px;
+}
+.google-signin-sep {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 14px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.google-signin-sep::before,
+.google-signin-sep::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.google-signin-btn {
+  display: flex;
+  justify-content: center;
+  min-height: 40px;
+}
+
+/* ---------- Páginas legales (privacidad, términos) ------------------------- */
+.legal-page {
+  padding-bottom: 48px;
+}
+.legal-prose {
+  max-width: 720px;
+  margin-top: 8px;
+  color: var(--ink-2);
+  font-size: var(--fs-md);
+  line-height: 1.7;
+}
+.legal-prose h2 {
+  margin: 32px 0 10px;
+  color: var(--ink);
+  font-size: var(--fs-lg);
+  letter-spacing: var(--tracking-tight);
+}
+.legal-prose p {
+  margin: 0 0 12px;
+}
+.legal-prose ul {
+  margin: 0 0 12px;
+  padding-left: 22px;
+  display: grid;
+  gap: 8px;
+}
+.legal-prose li {
+  padding-left: 4px;
+}
+.legal-prose a {
+  color: var(--brand-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.legal-prose strong {
+  color: var(--ink);
+}
+.legal-updated {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.legal-see-also {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}

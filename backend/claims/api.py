@@ -29,7 +29,7 @@ class ClaimsView(APIView):
         data = serializer.validated_data
         found = get_object_or_404(Report.objects.select_for_update(), pk=data["found_report_id"], kind=Report.Kind.FOUND)
         if found.publication_status != Report.Publication.PUBLIC or found.status != Report.Status.ACTIVE:
-            return Response({"error": "Este hallazgo no admite reclamaciones."}, status=409)
+            return Response({"error": "Este aviso ya no recibe solicitudes de devolución."}, status=409)
         if found.owner_id == request.user.pk:
             return Response({"error": "No puedes reclamar tu propio hallazgo."}, status=400)
         lost = None
@@ -38,14 +38,14 @@ class ClaimsView(APIView):
             if lost.status != Report.Status.ACTIVE:
                 return Response({"error": "El reporte de pérdida debe estar activo."}, status=409)
         if Claim.objects.filter(found_report=found, claimant=request.user).exists():
-            return Response({"error": "Ya presentaste una reclamación para este hallazgo."}, status=409)
+            return Response({"error": "Ya solicitaste la devolución de este objeto. Revisa el estado en Mi espacio."}, status=409)
         if Claim.objects.filter(claimant=request.user, created_at__gte=timezone.now() - timedelta(days=1)).count() >= 5:
-            return Response({"error": "Alcanzaste el límite diario de reclamaciones."}, status=429)
+            return Response({"error": "Ya enviaste cinco solicitudes de devolución en las últimas 24 horas. Inténtalo más tarde."}, status=429)
         claim = Claim.objects.create(found_report=found, lost_report=lost, claimant=request.user, evidence=data["evidence"])
         record(actor=request.user, action="claim.submitted", obj=claim)
         Notification.objects.create(
-            recipient=found.owner, kind=Notification.Kind.CLAIM, title="Nueva reclamación",
-            body="Una persona solicitó la revisión de tu hallazgo. La evidencia queda reservada al equipo verificador.", report=found,
+            recipient=found.owner, kind=Notification.Kind.CLAIM, title="Solicitaron la devolución de tu hallazgo",
+            body="Una persona cree que el objeto es suyo. El equipo revisará su detalle privado antes de coordinar cualquier entrega.", report=found,
         )
         return Response(ClaimSerializer(claim).data, status=201)
 
@@ -95,7 +95,7 @@ class ClaimDecisionView(APIView):
         found = Report.objects.select_for_update().get(pk=found_id)
         claim = Claim.objects.select_for_update().select_related("claimant").get(pk=pk)
         if claim.status not in (Claim.Status.SUBMITTED, Claim.Status.DISPUTED):
-            return Response({"error": "La reclamación ya tiene una decisión final."}, status=409)
+            return Response({"error": "Esta solicitud ya tiene una decisión. Revisa su estado en Mi espacio."}, status=409)
         decision = serializer.validated_data["decision"]
         if decision == "approve":
             if found.status != Report.Status.ACTIVE:
@@ -114,13 +114,22 @@ class ClaimDecisionView(APIView):
         claim.decision_reason = serializer.validated_data["reason"]
         claim.save(update_fields=["status", "decided_by", "decided_at", "decision_reason"])
         record(actor=request.user, action=f"claim.{claim.status}", obj=claim)
+        decision_messages = {
+            "approve": "El equipo aprobó tu solicitud. Revisa la respuesta y espera la coordinación; la entrega aún no está confirmada.",
+            "reject": "El equipo no pudo aprobar tu solicitud. Lee su respuesta en Mi espacio.",
+            "dispute": "El equipo necesita revisar tu solicitud con más detalle. Lee su respuesta en Mi espacio.",
+        }
         Notification.objects.create(
-            recipient=claim.claimant, kind=Notification.Kind.CLAIM, title="Actualización de reclamación",
-            body=f"Tu reclamación cambió a: {claim.get_status_display()}.", report=found,
+            recipient=claim.claimant, kind=Notification.Kind.CLAIM, title="Respuesta a tu solicitud de devolución",
+            body=decision_messages[decision], report=found,
         )
         if decision == "approve":
             Notification.objects.create(
-                recipient=found.owner, kind=Notification.Kind.CLAIM, title="Reclamación aprobada",
-                body="El equipo verificador aprobó una reclamación. Coordina la entrega mediante el proceso registrado.", report=found,
+                recipient=found.owner, kind=Notification.Kind.CLAIM, title="Solicitud de devolución aprobada",
+                body=(
+                    "El equipo aprobó una solicitud sobre tu hallazgo. El punto de resguardo coordinará la entrega."
+                    if found.holder == Report.Holder.POINT else
+                    "El equipo aprobó una solicitud sobre tu hallazgo. Conserva el objeto y espera las indicaciones para coordinar la entrega."
+                ), report=found,
             )
         return Response({"status": claim.status, "found_report_status": found.status})

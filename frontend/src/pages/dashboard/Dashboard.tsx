@@ -20,7 +20,7 @@ export function Dashboard() {
       <PageIntro
         label="SEGUIMIENTO"
         title="Mi espacio"
-        description="Sigue lo que perdiste o encontraste, revisa tus solicitudes y descubre qué ha cambiado en cada caso."
+        description="Aquí sigues lo que perdiste o encontraste, revisas tus solicitudes y ves qué ha cambiado en cada caso."
       >
         <Link className="btn btn-primary" to="/reportar">
           <Plus size={17} />

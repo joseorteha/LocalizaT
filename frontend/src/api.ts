@@ -191,6 +191,9 @@ export const api = {
   signup: (email: string, password: string) =>
     post<{ user: User }>("/api/auth/signup/", { email, password }),
   logout: () => post("/api/auth/logout/"),
+  authConfig: () => request<{ google_client_id: string }>("/api/auth/config/"),
+  googleLogin: (credential: string) =>
+    post<{ user: User }>("/api/auth/google/", { credential }),
   pushConfig: () => request<PushConfig>("/api/push/config/"),
   pushSubscriptionStatus: (endpoint: string) =>
     request<{ subscribed: boolean }>(`/api/push/subscriptions/?${new URLSearchParams({ endpoint })}`),

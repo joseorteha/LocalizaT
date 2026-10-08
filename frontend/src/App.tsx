@@ -1,6 +1,7 @@
 import {
   lazy,
   Suspense,
+  useCallback,
   useEffect,
   useState,
   type FormEvent,
@@ -32,6 +33,9 @@ import {
   X,
 } from "lucide-react";
 import { api, type User } from "./api";
+import { GoogleButton } from "./GoogleButton";
+import { Privacy } from "./pages/Privacy";
+import { Terms } from "./pages/Terms";
 import { SessionContext, useApp } from "./context";
 import { useAction } from "./hooks/useAction";
 import { useOnline, usePrefersReducedMotion } from "./lib";
@@ -91,7 +95,7 @@ function Protected({
       <div className="page-container">
         <EmptyState
           title="Necesitas una cuenta"
-          text="Con tu cuenta guardas tus reportes y te avisamos cuando haya noticias. Solo pedimos un correo."
+          text="Con una cuenta puedes guardar reportes, consultar posibles coincidencias y seguir cada solicitud. Puedes crearla con correo y contraseña o continuar con Google."
         >
           <div className="empty-actions">
             <Button
@@ -158,6 +162,14 @@ function AuthDialog({
       onSuccess(result.user, current);
     });
   }
+  const onGoogle = useCallback(
+    (credential: string) =>
+      run(async () => {
+        const result = await api.googleLogin(credential);
+        onSuccess(result.user, mode === "signup" ? "signup" : "login");
+      }),
+    [run, onSuccess, mode],
+  );
   return (
     <Modal
       open={mode !== null}
@@ -167,8 +179,8 @@ function AuthDialog({
       title={mode === "signup" ? "Crear mi cuenta" : "Entrar a mi cuenta"}
       description={
         mode === "signup"
-          ? "Solo necesitas un correo y una contraseña. Así guardamos tus reportes y te avisamos."
-          : "Escribe el correo y la contraseña que usaste al crear tu cuenta."
+          ? "Crea tu cuenta con correo y contraseña o continúa con Google. Así podrás seguir tus reportes y solicitudes."
+          : "Entra con tu correo y contraseña, o continúa con Google."
       }
     >
       <div className="auth-mark">
@@ -233,6 +245,7 @@ function AuthDialog({
           <ArrowRight size={17} />
         </Button>
       </form>
+      <GoogleButton onToken={onGoogle} onError={setError} />
       <p className="auth-switch">
         {mode === "signup" ? "¿Ya tienes cuenta?" : "¿No tienes cuenta?"}{" "}
         <button
@@ -491,6 +504,8 @@ export default function App() {
               }
             />
             <Route path="/reportar" element={<ReportWizard />} />
+            <Route path="/privacidad" element={<Privacy />} />
+            <Route path="/terminos" element={<Terms />} />
             <Route
               path="/mis-reportes/:id"
               element={
@@ -544,11 +559,13 @@ export default function App() {
           <div>
             <Link to="/explorar">Avisos</Link>
             <Link to="/mi-espacio">Mi espacio</Link>
+            <Link to="/privacidad">Privacidad</Link>
+            <Link to="/terminos">Términos</Link>
             {user && (user.is_staff || user.is_point_member) && (
               <Link to="/operacion">Panel del equipo</Link>
             )}
           </div>
-          <span>Construido con propósito.</span>
+          <span>Hecho para la Sierra de Zongolica.</span>
         </div>
       </footer>
       <nav className="bottom-nav" aria-label="Accesos rápidos">

@@ -2,5 +2,7 @@ Django>=5.2,<5.3
 djangorestframework>=3.16,<3.17
 psycopg[binary]>=3.2,<3.3
 gunicorn>=23,<24
+whitenoise>=6.6,<7
 pywebpush>=2.0,<3
 fastembed>=0.7,<0.8
+google-auth>=2.0,<3
