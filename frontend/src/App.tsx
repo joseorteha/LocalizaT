@@ -34,6 +34,8 @@ import {
 } from "lucide-react";
 import { api, type User } from "./api";
 import { GoogleButton } from "./GoogleButton";
+import { Privacy } from "./pages/Privacy";
+import { Terms } from "./pages/Terms";
 import { SessionContext, useApp } from "./context";
 import { useAction } from "./hooks/useAction";
 import { useOnline, usePrefersReducedMotion } from "./lib";
@@ -502,6 +504,8 @@ export default function App() {
               }
             />
             <Route path="/reportar" element={<ReportWizard />} />
+            <Route path="/privacidad" element={<Privacy />} />
+            <Route path="/terminos" element={<Terms />} />
             <Route
               path="/mis-reportes/:id"
               element={
@@ -555,11 +559,13 @@ export default function App() {
           <div>
             <Link to="/explorar">Avisos</Link>
             <Link to="/mi-espacio">Mi espacio</Link>
+            <Link to="/privacidad">Privacidad</Link>
+            <Link to="/terminos">Términos</Link>
             {user && (user.is_staff || user.is_point_member) && (
               <Link to="/operacion">Panel del equipo</Link>
             )}
           </div>
-          <span>Construido con propósito.</span>
+          <span>Hecho para la Sierra de Zongolica.</span>
         </div>
       </footer>
       <nav className="bottom-nav" aria-label="Accesos rápidos">
