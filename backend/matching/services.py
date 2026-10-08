@@ -77,7 +77,7 @@ def process_report(report):
                         recipient=owner,
                         kind=Notification.Kind.MATCH,
                         title="Posible coincidencia",
-                        body="Hay un reporte público compatible para revisar. No confirma la propiedad.",
+                        body="Hay un aviso público que podría corresponder a tu reporte. Revísalo en Mi espacio; el parecido no confirma que sea el mismo objeto.",
                         report=lost if owner.pk == lost.owner_id else found,
                     )
     return created_count

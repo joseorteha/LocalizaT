@@ -228,7 +228,7 @@ export function Explore() {
               ? "Aún no encontramos un aviso con esos datos."
               : "Todavía no hay avisos publicados."
           }
-          text="Prueba cambiando los filtros, o registra tu objeto para que la comunidad lo vea."
+          text="Prueba cambiando los filtros. Si perdiste o encontraste algo, registra un reporte y elige si quieres compartir un aviso."
         >
           {Object.keys(filters).length > 0 && (
             <Button variant="secondary" onClick={() => setParams({})}>

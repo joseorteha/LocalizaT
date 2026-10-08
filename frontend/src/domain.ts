@@ -154,7 +154,7 @@ function publicationProgress(
   if (report.publication_status === "pending")
     return {
       short: "El equipo revisa tu aviso",
-      next: `Tu reporte está guardado. El aviso aún no es público: espera la revisión del equipo. ${report.kind === "lost" ? "Puedes buscar en los objetos encontrados mientras tanto." : "Conserva el objeto mientras se revisa."} Las novedades aparecen en la campana; todavía no enviamos correo ni SMS.`,
+      next: `Tu reporte está guardado; el aviso detallado espera revisión antes de aparecer en la comunidad. ${report.kind === "lost" ? "Puedes buscar entre los hallazgos mientras tanto." : "Conserva el objeto mientras se revisa."} Consulta el resultado en Novedades, en la campana.`,
       tone: "wait",
       action: report.kind === "lost" ? "explore" : undefined,
     };
@@ -248,7 +248,7 @@ export function lostProgress(
   return {
     steps: withStage(labels, 1),
     short: "Visible para la comunidad",
-    next: "La comunidad ya puede ver tu aviso. También puedes buscar por tu cuenta entre los objetos encontrados. Vuelve a Mi espacio para revisar coincidencias y novedades; todavía no enviamos correo ni SMS.",
+    next: "La comunidad ya puede ver tu aviso. También puedes buscar entre los objetos encontrados. Si aparece una posible coincidencia, revísala aquí o en Novedades.",
     tone: "wait",
     action: "explore",
   };
@@ -297,7 +297,7 @@ export function foundProgress(report: ReportLike): CaseProgress {
     next:
       matches > 0
         ? `Hay ${plural(matches, "reporte de pérdida", "reportes de pérdida")} de algo parecido. Guarda el objeto: si alguien lo reclama, el equipo comprobará que sea suyo antes de entregarlo.`
-        : "Guarda el objeto por ahora. Si alguien lo reclama, el equipo comprobará que sea suyo y te avisará.",
+        : "Guarda el objeto por ahora. Si alguien solicita su devolución, el equipo revisará su propiedad antes de coordinar la entrega. Consulta Novedades para seguir el caso.",
     tone: "wait",
   };
 }

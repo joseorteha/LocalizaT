@@ -57,7 +57,7 @@ export function PushSettings() {
         await enablePush(publicKey);
         setEnabled(true);
         setHint("");
-        toast("Te avisaremos cuando haya una posible coincidencia.");
+        toast("Activaste los avisos de posibles coincidencias en este dispositivo.");
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "No se pudieron configurar los avisos.";
@@ -74,7 +74,7 @@ export function PushSettings() {
       <div className="push-settings-copy">
         <span className="eyebrow">EN ESTE DISPOSITIVO</span>
         <h3>Avisos de coincidencia</h3>
-        <p>Te avisaremos si aparece algo parecido a un objeto que reportaste. Solo coincidencias, sin mensajes por cada publicación.</p>
+        <p>Si detectamos un posible parecido con tu reporte, podemos avisarte en este dispositivo. Revisa el caso en Mi espacio antes de solicitar una devolución.</p>
       </div>
       <span className={`push-status ${enabled ? "is-active" : ""}`} aria-live="polite">{enabled ? "Activados" : ready ? "Desactivados" : "Preparando"}</span>
       <button className="btn btn-secondary" type="button" onClick={toggle} disabled={!ready || (!available && !enabled) || busy}>
