@@ -1,0 +1,55 @@
+name: localizat-prod
+
+# Producción: API con gunicorn, worker con la IA semántica y Caddy como
+# servidor web con HTTPS automático. La base de datos es externa (Neon), por
+# eso aquí NO hay contenedor de Postgres. Todos los secretos salen de .env.prod.
+#
+#   docker compose -f compose.prod.yaml up -d --build
+#
+services:
+  api:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      MATCHING_ENGINE: semantic
+      MATCHING_MODEL_CACHE: /models
+    volumes:
+      # El modelo (~220 MB) se descarga una vez y se comparte con el worker.
+      - matching_models:/models
+    command: sh -c "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120"
+    expose:
+      - "8000"
+
+  worker:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      MATCHING_ENGINE: semantic
+      MATCHING_MODEL_CACHE: /models
+    volumes:
+      - matching_models:/models
+    command: python manage.py run_matching_worker
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    # Caddy lee {$DOMAIN} de .env.prod para sacar el certificado HTTPS.
+    env_file: .env.prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+volumes:
+  matching_models:
+  caddy_data:
+  caddy_config:

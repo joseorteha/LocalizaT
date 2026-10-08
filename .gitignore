@@ -4,6 +4,9 @@
 !/.gitignore
 !/.env.example
 !/compose.yaml
+!/compose.prod.yaml
+!/Caddyfile
+!/DESPLIEGUE.md
 !/backend/
 !/frontend/
 
@@ -20,3 +23,4 @@
 **/dist/
 frontend/public/exploracion-color.html
 backend/.models/
+!/.env.prod.example

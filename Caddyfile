@@ -1,0 +1,7 @@
+# Caddy saca y renueva solo el certificado HTTPS (Let's Encrypt) para el
+# dominio que pongas en DOMAIN (.env.prod). Pasa todo a gunicorn, que sirve la
+# API, el panel /admin y sus estáticos (vía WhiteNoise).
+{$DOMAIN} {
+	encode gzip zstd
+	reverse_proxy api:8000
+}
