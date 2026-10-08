@@ -1,0 +1,588 @@
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
+import {
+  Link,
+  NavLink,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import Lenis from "lenis";
+import "lenis/dist/lenis.css";
+import {
+  AlertCircle,
+  ArrowRight,
+  Bell,
+  Check,
+  Compass,
+  Eye,
+  EyeOff,
+  LogOut,
+  Menu,
+  Plus,
+  UserRound,
+  X,
+} from "lucide-react";
+import { api, type User } from "./api";
+import { SessionContext, useApp } from "./context";
+import { useAction } from "./hooks/useAction";
+import { Button, EmptyState, ErrorBox, Modal } from "./components/ui";
+const Home = lazy(() =>
+  import("./pages/Home").then((module) => ({ default: module.Home })),
+);
+const Explore = lazy(() =>
+  import("./pages/explore/Explore").then((module) => ({
+    default: module.Explore,
+  })),
+);
+const PublicDetail = lazy(() =>
+  import("./pages/explore/PublicDetail").then((module) => ({
+    default: module.PublicDetail,
+  })),
+);
+const Dashboard = lazy(() =>
+  import("./pages/dashboard/Dashboard").then((module) => ({
+    default: module.Dashboard,
+  })),
+);
+const OwnReportDetail = lazy(() =>
+  import("./pages/dashboard/OwnReportDetail").then((module) => ({
+    default: module.OwnReportDetail,
+  })),
+);
+const ReportWizard = lazy(() =>
+  import("./pages/ReportWizard").then((module) => ({
+    default: module.ReportWizard,
+  })),
+);
+const Operations = lazy(() =>
+  import("./pages/operations/Operations").then((module) => ({
+    default: module.Operations,
+  })),
+);
+
+function Protected({
+  children,
+  operator = false,
+}: {
+  children: ReactNode;
+  operator?: boolean;
+}) {
+  const { user, sessionLoading, openAuth } = useApp();
+  const location = useLocation();
+  if (sessionLoading)
+    return (
+      <div className="page-container loading-page" aria-busy="true">
+        Preparando tu espacio…
+      </div>
+    );
+  if (!user)
+    return (
+      <div className="page-container">
+        <EmptyState
+          title="Necesitas una cuenta"
+          text="Con tu cuenta guardas tus reportes y te avisamos cuando haya noticias. Solo pedimos un correo."
+        >
+          <div className="empty-actions">
+            <Button
+              onClick={() =>
+                openAuth(location.pathname + location.search, "signup")
+              }
+            >
+              Crear mi cuenta <ArrowRight size={17} />
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => openAuth(location.pathname + location.search)}
+            >
+              Ya tengo cuenta
+            </Button>
+          </div>
+        </EmptyState>
+      </div>
+    );
+  if (operator && !user.is_staff && !user.is_point_member)
+    return (
+      <div className="page-container">
+        <EmptyState
+          title="Un espacio para el equipo"
+          text="Este panel requiere acceso de operación. Puedes seguir tus reportes en Mi espacio."
+        >
+          <Link className="btn btn-primary" to="/mi-espacio">
+            Ir a mi espacio
+          </Link>
+        </EmptyState>
+      </div>
+    );
+  return children;
+}
+
+function AuthDialog({
+  mode,
+  setMode,
+  onClose,
+  onSuccess,
+}: {
+  mode: "login" | "signup" | null;
+  setMode: (mode: "login" | "signup") => void;
+  onClose: () => void;
+  onSuccess: (user: User, mode: "login" | "signup") => void;
+}) {
+  const { busy, error, setError, run } = useAction();
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    setError("");
+    setVisible(false);
+  }, [mode, setError]);
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const password = String(data.get("password"));
+    if (mode === "signup" && password !== String(data.get("confirmation"))) {
+      setError("Las contraseñas deben coincidir.");
+      return;
+    }
+    const current = mode === "signup" ? "signup" : "login";
+    run(async () => {
+      const result = await api[current](String(data.get("email")), password);
+      onSuccess(result.user, current);
+    });
+  }
+  return (
+    <Modal
+      open={mode !== null}
+      onOpenChange={(open) => {
+        if (!open && !busy) onClose();
+      }}
+      title={mode === "signup" ? "Crear mi cuenta" : "Entrar a mi cuenta"}
+      description={
+        mode === "signup"
+          ? "Solo necesitas un correo y una contraseña. Así guardamos tus reportes y te avisamos."
+          : "Escribe el correo y la contraseña que usaste al crear tu cuenta."
+      }
+    >
+      <div className="auth-mark">
+        <img src="/isotipo.svg" alt="" />
+      </div>
+      <form className="form-stack" onSubmit={submit} key={mode}>
+        <label>
+          Correo electrónico
+          <input
+            name="email"
+            type="email"
+            autoFocus
+            autoComplete="email"
+            placeholder="tu@correo.com"
+            required
+            maxLength={254}
+          />
+        </label>
+        <label>
+          Contraseña
+          <div className="password-field">
+            <input
+              name="password"
+              type={visible ? "text" : "password"}
+              autoComplete={
+                mode === "signup" ? "new-password" : "current-password"
+              }
+              minLength={8}
+              required
+            />
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => setVisible((value) => !value)}
+              aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+            >
+              {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {mode === "signup" && (
+            <small>
+              Al menos 8 caracteres y no solo números. Mejor una que no uses en
+              otro lugar.
+            </small>
+          )}
+        </label>
+        {mode === "signup" && (
+          <label>
+            Confirma tu contraseña
+            <input
+              name="confirmation"
+              type={visible ? "text" : "password"}
+              autoComplete="new-password"
+              minLength={8}
+              required
+            />
+          </label>
+        )}
+        {error && <ErrorBox message={error} />}
+        <Button type="submit" busy={busy}>
+          {mode === "signup" ? "Crear mi cuenta" : "Entrar"}
+          <ArrowRight size={17} />
+        </Button>
+      </form>
+      <p className="auth-switch">
+        {mode === "signup" ? "¿Ya tienes cuenta?" : "¿No tienes cuenta?"}{" "}
+        <button
+          type="button"
+          onClick={() => setMode(mode === "signup" ? "login" : "signup")}
+        >
+          {mode === "signup" ? "Entra aquí" : "Créala aquí"}
+        </button>
+      </p>
+    </Modal>
+  );
+}
+
+export default function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [authMode, setAuthMode] = useState<"login" | "signup" | null>(null);
+  const [authNext, setAuthNext] = useState("/mi-espacio");
+  const [notice, setNotice] = useState("");
+  const [noticeKind, setNoticeKind] = useState<"success" | "error">("success");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const [unreadVersion, setUnreadVersion] = useState(0);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const reduced = useReducedMotion();
+  const toast = (message: string, kind: "success" | "error" = "success") => {
+    setNoticeKind(kind);
+    setNotice(message);
+  };
+  const openAuth = (
+    next = "/mi-espacio",
+    mode: "login" | "signup" = "login",
+  ) => {
+    setAuthNext(next);
+    setAuthMode(mode);
+    setMenuOpen(false);
+  };
+  useEffect(() => {
+    api
+      .me()
+      .then((result) => setUser(result.user))
+      .catch(() =>
+        toast(
+          "No pudimos conectar con tu sesión. Puedes volver a intentar entrar.",
+          "error",
+        ),
+      )
+      .finally(() => setSessionLoading(false));
+  }, []);
+  useEffect(() => {
+    // Se vuelve a contar al cambiar de pantalla: así la campana se mantiene al día
+    // sin estar consultando al servidor todo el tiempo.
+    if (!user) {
+      setUnread(0);
+      return;
+    }
+    let active = true;
+    api
+      .notices()
+      .then((items) => {
+        if (active) setUnread(items.filter((item) => !item.read_at).length);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [user, location.pathname, unreadVersion]);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), 6000);
+    return () => clearTimeout(timer);
+  }, [notice]);
+  useEffect(() => {
+    setMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: "instant" });
+    const titles: Record<string, string> = {
+      "/": "Lo encontrado puede volver",
+      "/explorar": "Explorar avisos",
+      "/mi-espacio": "Mi espacio",
+      "/reportar": "Nuevo reporte",
+      "/operacion": "Panel del equipo",
+    };
+    const title =
+      titles[location.pathname] ??
+      (location.pathname.startsWith("/avisos/")
+        ? "Aviso"
+        : location.pathname.startsWith("/mis-reportes/")
+          ? "Mi caso"
+          : "Página no encontrada");
+    document.title = `${title} · LocalizaT`;
+  }, [location.pathname]);
+  useEffect(() => {
+    if (reduced || location.pathname !== "/") return;
+    const lenis = new Lenis({
+      autoRaf: true,
+      anchors: { offset: -100 },
+      lerp: 0.11,
+      prevent: (node) => node.hasAttribute("data-lenis-prevent"),
+    });
+    return () => lenis.destroy();
+  }, [reduced, location.pathname]);
+  async function signOut() {
+    try {
+      const { disablePush } = await import("./push");
+      await disablePush().catch(() => {});
+      await api.logout();
+      setUser(null);
+      navigate("/");
+      toast("Cerraste tu sesión. Hasta pronto.");
+    } catch (caught) {
+      toast(
+        caught instanceof Error
+          ? caught.message
+          : "No pudimos cerrar la sesión.",
+        "error",
+      );
+    }
+  }
+  return (
+    <SessionContext.Provider
+      value={{
+        user,
+        sessionLoading,
+        openAuth,
+        toast,
+        unread,
+        refreshUnread: () => setUnreadVersion((value) => value + 1),
+      }}
+    >
+      <a className="skip-link" href="#main">
+        Saltar al contenido
+      </a>
+      <header className="site-header">
+        <div className="header-inner">
+          <Link className="brand-link" to="/" aria-label="LocalizaT, inicio">
+            <img src="/localizat-logo.svg" alt="LocalizaT" />
+          </Link>
+          <nav className="desktop-nav" aria-label="Navegación principal">
+            <NavLink to="/" end>
+              Inicio
+            </NavLink>
+            <NavLink to="/explorar">Explorar avisos</NavLink>
+            <Link
+              to="/#como-funciona"
+              onClick={(event) => {
+                if (location.pathname === "/") {
+                  event.preventDefault();
+                  document.getElementById("como-funciona")?.scrollIntoView({
+                    behavior: reduced ? "instant" : "smooth",
+                  });
+                }
+              }}
+            >
+              Cómo funciona
+            </Link>
+          </nav>
+          <div className="header-actions">
+            {user ? (
+              <>
+                <Link
+                  to="/mi-espacio?section=alerts"
+                  className="icon-button notification-nav"
+                  aria-label={
+                    unread ? `Novedades: ${unread} sin leer` : "Novedades"
+                  }
+                >
+                  <Bell size={20} />
+                  {unread > 0 && (
+                    <span className="bell-count" aria-hidden="true">
+                      {unread > 9 ? "9+" : unread}
+                    </span>
+                  )}
+                </Link>
+                <Link to="/mi-espacio" className="account-button">
+                  <span className="avatar">{user.email[0].toUpperCase()}</span>
+                  <span>Mi espacio</span>
+                </Link>
+                <button
+                  className="icon-button logout-nav"
+                  onClick={signOut}
+                  aria-label="Cerrar sesión"
+                >
+                  <LogOut size={18} />
+                </button>
+              </>
+            ) : (
+              <button className="login-link" onClick={() => openAuth()}>
+                Entrar <ArrowRight size={16} />
+              </button>
+            )}
+            <Link to="/reportar" className="btn btn-primary header-report">
+              <Plus size={17} />
+              Crear reporte
+            </Link>
+            <button
+              className="icon-button mobile-menu-toggle"
+              aria-expanded={menuOpen}
+              aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+              onClick={() => setMenuOpen((value) => !value)}
+            >
+              {menuOpen ? <X size={23} /> : <Menu size={23} />}
+            </button>
+          </div>
+        </div>
+        {menuOpen && (
+          <nav className="mobile-menu" aria-label="Navegación móvil">
+            <Link to="/">Inicio</Link>
+            <Link to="/explorar">Explorar avisos</Link>
+            <Link to="/mi-espacio">Mi espacio</Link>
+            {user && (user.is_staff || user.is_point_member) && (
+              <Link to="/operacion">Panel del equipo</Link>
+            )}
+            {user && <button onClick={signOut}>Cerrar sesión</button>}
+          </nav>
+        )}
+      </header>
+      <main id="main" tabIndex={-1}>
+        <Suspense
+          fallback={
+            <div className="page-container loading-page">
+              Preparando el camino…
+            </div>
+          }
+        >
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/explorar" element={<Explore />} />
+            <Route path="/avisos/:id" element={<PublicDetail />} />
+            <Route
+              path="/mi-espacio"
+              element={
+                <Protected>
+                  <Dashboard />
+                </Protected>
+              }
+            />
+            <Route path="/reportar" element={<ReportWizard />} />
+            <Route
+              path="/mis-reportes/:id"
+              element={
+                <Protected>
+                  <OwnReportDetail />
+                </Protected>
+              }
+            />
+            <Route
+              path="/operacion"
+              element={
+                <Protected operator>
+                  <Operations />
+                </Protected>
+              }
+            />
+            <Route
+              path="*"
+              element={
+                <div className="page-container">
+                  <EmptyState
+                    title="Este camino no tiene un aviso"
+                    text="La página pudo cambiar o el aviso ya no está disponible."
+                  >
+                    <Link className="btn btn-primary" to="/explorar">
+                      Explorar avisos <ArrowRight size={17} />
+                    </Link>
+                  </EmptyState>
+                </div>
+              }
+            />
+          </Routes>
+        </Suspense>
+      </main>
+      <footer className="site-footer">
+        <div className="footer-top">
+          <Link to="/" className="footer-logo">
+            <img src="/logo-negativo.svg" alt="LocalizaT" />
+          </Link>
+          <p>
+            Lo encontrado puede volver.
+            <br />
+            <span>Una comunidad, muchos caminos de regreso.</span>
+          </p>
+          <Link to="/reportar" className="footer-cta">
+            Haz que algo vuelva <ArrowRight size={22} />
+          </Link>
+        </div>
+        <div className="footer-bottom">
+          <span>Sierra de Zongolica · Veracruz, México</span>
+          <div>
+            <Link to="/explorar">Avisos</Link>
+            <Link to="/mi-espacio">Mi espacio</Link>
+            {user && (user.is_staff || user.is_point_member) && (
+              <Link to="/operacion">Panel del equipo</Link>
+            )}
+          </div>
+          <span>Construido con propósito.</span>
+        </div>
+      </footer>
+      <nav className="bottom-nav" aria-label="Accesos rápidos">
+        <NavLink to="/explorar">
+          <Compass size={20} />
+          Explorar
+        </NavLink>
+        <NavLink to="/reportar" className="bottom-create">
+          <Plus size={23} />
+          Reportar
+        </NavLink>
+        <NavLink to="/mi-espacio">
+          <UserRound size={20} />
+          Mi espacio
+        </NavLink>
+      </nav>
+      <AuthDialog
+        mode={authMode}
+        setMode={setAuthMode}
+        onClose={() => setAuthMode(null)}
+        onSuccess={(signedIn, mode) => {
+          setUser(signedIn);
+          setAuthMode(null);
+          navigate(authNext);
+          toast(
+            mode === "signup"
+              ? "Tu cuenta está lista."
+              : "Hola de nuevo. Entraste a tu cuenta.",
+          );
+        }}
+      />
+      <AnimatePresence>
+        {notice && (
+          <motion.div
+            className={`toast ${noticeKind === "error" ? "toast-error" : ""}`}
+            role={noticeKind === "error" ? "alert" : "status"}
+            initial={reduced ? false : { y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {noticeKind === "error" ? (
+              <AlertCircle size={18} />
+            ) : (
+              <Check size={18} />
+            )}
+            <span>{notice}</span>
+            <button
+              className="icon-button"
+              onClick={() => setNotice("")}
+              aria-label="Cerrar aviso"
+            >
+              <X size={17} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </SessionContext.Provider>
+  );
+}
