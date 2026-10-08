@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -81,3 +82,48 @@ def me(request):
     if not request.user.is_authenticated:
         return JsonResponse({"user": None})
     return JsonResponse({"user": identity(request.user)})
+
+
+@require_GET
+def auth_config(request):
+    """Datos públicos que el frontend necesita (ID de cliente de Google, si lo hay)."""
+    return JsonResponse({"google_client_id": settings.GOOGLE_OAUTH_CLIENT_ID})
+
+
+@require_POST
+@csrf_protect
+def google_login(request):
+    """Inicia sesión con un token de identidad de Google (botón "Continuar con Google")."""
+    if not settings.GOOGLE_OAUTH_CLIENT_ID:
+        return JsonResponse({"error": "El inicio con Google no está disponible."}, status=503)
+    data = read_json(request)
+    if data is None:
+        return JsonResponse({"error": "Envía un objeto JSON válido."}, status=400)
+    credential = str(data.get("credential", ""))
+    if not credential:
+        return JsonResponse({"error": "Falta el token de Google."}, status=400)
+    try:
+        from google.auth.transport import requests as google_requests
+        from google.oauth2 import id_token
+
+        info = id_token.verify_oauth2_token(
+            credential,
+            google_requests.Request(),
+            settings.GOOGLE_OAUTH_CLIENT_ID,
+            clock_skew_in_seconds=10,
+        )
+    except Exception:
+        return JsonResponse({"error": "No se pudo verificar tu cuenta de Google."}, status=401)
+    if not info.get("email") or not info.get("email_verified"):
+        return JsonResponse({"error": "Tu correo de Google no está verificado."}, status=401)
+    email = str(info["email"]).strip().lower()
+    user, created = User.objects.get_or_create(email=email)
+    if created:
+        user.set_unusable_password()
+        user.first_name = str(info.get("given_name", ""))[:150]
+        user.last_name = str(info.get("family_name", ""))[:150]
+        user.save()
+    # Hay un solo backend de autenticación; lo indicamos explícitamente porque no
+    # pasamos por authenticate().
+    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    return JsonResponse({"user": identity(user)}, status=201 if created else 200)
