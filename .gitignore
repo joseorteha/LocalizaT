@@ -1,0 +1,21 @@
+# Lista permitida en la raíz: solo código y configuración para desarrollo.
+/*
+!/README.md
+!/.gitignore
+!/.env.example
+!/compose.yaml
+!/backend/
+!/frontend/
+
+# Credenciales, datos locales y salidas de herramientas.
+.env
+.env.*
+!.env.example
+**/.venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/*.sqlite3
+**/node_modules/
+**/dist/
+frontend/public/exploracion-color.html
