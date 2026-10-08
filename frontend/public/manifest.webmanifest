@@ -5,10 +5,50 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#F7F8F4",
-  "theme_color": "#0F4D3A",
+  "background_color": "#F4F8F7",
+  "theme_color": "#0E4E5A",
   "icons": [
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "/icon-800.png", "sizes": "800x800", "type": "image/png", "purpose": "any" }
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "lang": "es-MX",
+  "shortcuts": [
+    {
+      "name": "Perdí algo",
+      "short_name": "Perdí algo",
+      "url": "/reportar?kind=lost"
+    },
+    {
+      "name": "Encontré algo",
+      "short_name": "Encontré algo",
+      "url": "/reportar?kind=found"
+    },
+    {
+      "name": "Explorar avisos",
+      "short_name": "Explorar",
+      "url": "/explorar"
+    }
   ]
 }

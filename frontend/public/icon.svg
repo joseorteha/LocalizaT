@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="LocalizaT">
+  <!-- Ícono de la app: fondo a sangre (para íconos «maskable») y símbolo
+       dentro de la zona segura central, así Android puede recortarlo en
+       círculo, gota o cuadrado sin cortar el logo. -->
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1a7686"/>
+      <stop offset="0.55" stop-color="#0e4e5a"/>
+      <stop offset="1" stop-color="#06252b"/>
+    </linearGradient>
+    <radialGradient id="brillo" cx="0.22" cy="0.82" r="0.6">
+      <stop offset="0" stop-color="#d6e65a" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#d6e65a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#fondo)"/>
+  <rect width="1024" height="1024" fill="url(#brillo)"/>
+  <path d="M75 36 C81 25 75 13 64 9 C54 5 46 10 40 16 L15 41 C6 50 7 64 18 72 C29 80 42 74 53 63 L64 49 C75 38 87 45 89 57 C91 69 80 78 68 78 C56 78 44 69 39 61 C34 51 39 42 50 40 L56 40"
+        transform="translate(165.6 208) scale(7.07)"
+        fill="none" stroke="#d6e65a" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

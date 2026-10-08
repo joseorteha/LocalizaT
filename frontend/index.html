@@ -2,8 +2,11 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0F4D3A" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="LocalizaT" />
+    <meta name="theme-color" content="#0E4E5A" />
     <meta
       name="description"
       content="LocalizaT conecta pérdidas y hallazgos en la Sierra de Zongolica. Explora avisos, registra un objeto y abre un camino para que lo encontrado pueda volver."
@@ -13,15 +16,53 @@
     <link rel="apple-touch-icon" href="/icon-800.png" />
     <link
       rel="preload"
-      href="/fonts/Manrope-variable.ttf"
+      href="/fonts/Manrope-variable-latin.woff2"
       as="font"
-      type="font/ttf"
+      type="font/woff2"
       crossorigin
     />
     <title>LocalizaT | Sierra de Zongolica</title>
+    <!-- Tema antes de pintar: la elección guardada o, si no hay, la del sistema. -->
+    <script>
+      (function () {
+        var saved = null;
+        try { saved = localStorage.getItem("localizat:tema"); } catch (e) {}
+        var dark = saved ? saved === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        if (dark) document.querySelector('meta[name="theme-color"]').setAttribute("content", "#061A1F");
+      })();
+    </script>
+    <!-- Pantalla de arranque: se ve al instante, aun con señal lenta, mientras
+         llega la aplicación. React la reemplaza al montar #root. -->
+    <style>
+      body { margin: 0; background: #f4f8f7; color: #0f2a30; font-family: system-ui, sans-serif; }
+      .boot { min-height: 100vh; display: grid; place-content: center; gap: 14px; text-align: center; padding: 24px; }
+      .boot strong { font-size: 30px; letter-spacing: -0.5px; }
+      .boot p { margin: 0; font-size: 16px; color: #33505a; }
+      .boot-bar { width: 160px; height: 4px; margin: 6px auto 0; border-radius: 4px; background: #dbe6e5; overflow: hidden; }
+      .boot-bar::after { content: ""; display: block; width: 40%; height: 100%; background: linear-gradient(90deg, #0e4e5a, #c8dc3c); animation: boot 1.2s ease-in-out infinite; }
+      @keyframes boot { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+      @media (prefers-reduced-motion: reduce) { .boot-bar::after { animation: none; width: 100%; } }
+      [data-theme="dark"] body { background: #061a1f; color: #e6f1f1; }
+      [data-theme="dark"] .boot p { color: #b4cbcd; }
+      [data-theme="dark"] .boot-bar { background: #1c3e45; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot" role="status">
+        <strong>LocalizaT</strong>
+        <p>Objetos perdidos y encontrados de la Sierra de Zongolica</p>
+        <p>Cargando… si tu señal es lenta, puede tardar un poco.</p>
+        <span class="boot-bar" aria-hidden="true"></span>
+      </div>
+    </div>
+    <noscript>
+      <p style="padding: 24px; font-size: 16px">
+        LocalizaT necesita JavaScript. Actívalo en tu navegador para reportar o
+        buscar objetos.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
