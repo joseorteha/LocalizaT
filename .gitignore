@@ -5,7 +5,6 @@
 !/.env.example
 !/compose.yaml
 !/compose.prod.yaml
-!/vercel.json
 !/Caddyfile
 !/DESPLIEGUE.md
 !/backend/

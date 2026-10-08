@@ -35,7 +35,10 @@ services:
       - api
 
   caddy:
-    image: caddy:2-alpine
+    # Imagen con el frontend ya compilado dentro; Caddy lo sirve y hace de proxy.
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
     restart: unless-stopped
     # Caddy lee {$DOMAIN} de .env.prod para sacar el certificado HTTPS.
     env_file: .env.prod
