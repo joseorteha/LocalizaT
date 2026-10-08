@@ -188,7 +188,7 @@ export function OwnReportDetail() {
             <>
               <p className="case-section-help">
                 {lost
-                  ? "Una coincidencia es una posibilidad. Abre el aviso y, si lo reconoces, solicita la devolución con un detalle privado."
+                  ? "Esto es solo un parecido, no una confirmación. Abre el aviso y, si lo reconoces, pide la devolución con un detalle privado."
                   : "No tienes que hacer nada. Si alguien lo reclama, el equipo comprobará que sea suyo antes de cualquier entrega."}
               </p>
               <div className="suggestion-grid">

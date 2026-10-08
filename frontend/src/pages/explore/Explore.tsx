@@ -53,7 +53,7 @@ export function Explore() {
         }
         description={
           params.get("kind") === "found"
-            ? "Si reconoces tu objeto, abre el aviso y solicita su devolución. El equipo revisará tu propiedad antes de coordinar la entrega."
+            ? "¿Reconoces algo tuyo? Abre el aviso y pide la devolución. El equipo revisará que de verdad es tuyo antes de coordinar la entrega."
             : "Encontrados: alguien quiere devolverlos. Se buscan: alguien los perdió."
         }
       >
@@ -228,7 +228,7 @@ export function Explore() {
               ? "Aún no encontramos un aviso con esos datos."
               : "Todavía no hay avisos publicados."
           }
-          text="Puedes cambiar los filtros o registrar tu objeto. Cuando se apruebe un aviso compatible, habrá una nueva posibilidad."
+          text="Prueba cambiando los filtros, o registra tu objeto para que la comunidad lo vea."
         >
           {Object.keys(filters).length > 0 && (
             <Button variant="secondary" onClick={() => setParams({})}>

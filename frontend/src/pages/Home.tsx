@@ -39,7 +39,7 @@ export function Home() {
     {
       number: "02",
       title: "Te avisamos si aparece.",
-      text: "Una inteligencia artificial dentro de LocalizaT compara tu descripción con las demás, aunque usen otras palabras. Si hay algo parecido, te avisamos.",
+      text: "Usamos un poco de inteligencia artificial para comparar tu descripción con las demás, aunque estén escritas con otras palabras. Si algo se parece, te avisamos.",
       icon: Sparkle,
     },
     {
@@ -103,15 +103,15 @@ export function Home() {
                 DEL ENCUENTRO AL REGRESO
               </p>
               <h2>
-                Un camino sencillo.
+                Funciona
                 <br />
-                Un impacto cercano.
+                en tres pasos.
               </h2>
             </div>
             <p>
-              La tecnología conecta los reportes.
+              La app encuentra lo que se parece.
               <br />
-              Las personas hacen que algo vuelva.
+              Entre vecinos logramos que vuelva.
             </p>
           </Reveal>
           <div className="steps-grid">
@@ -136,7 +136,7 @@ export function Home() {
             <span key={String(copy)} className="ribbon-group" aria-hidden={copy || undefined}>
               <span>HECHO PARA NUESTRA SIERRA</span>
               <span className="ribbon-star">✳</span>
-              <span>CADA HALLAZGO ABRE UNA POSIBILIDAD</span>
+              <span>LO QUE SE PIERDE PUEDE REGRESAR</span>
               <span className="ribbon-star">✳</span>
               <span>DE PERSONA A PERSONA</span>
               <span className="ribbon-star">✳</span>
@@ -155,9 +155,8 @@ export function Home() {
           </div>
           <div>
             <p>
-              Aquí se muestran avisos básicos publicados al momento y avisos
-              detallados revisados por el equipo. Los dibujos son de referencia,
-              no fotos de los objetos.
+              Estos son los avisos que ha publicado la comunidad. Los dibujos
+              son solo de referencia; no son fotos reales de los objetos.
             </p>
             <Link className="text-link" to="/explorar">
               Explorar todos los avisos <ArrowUpRight size={18} />
@@ -180,10 +179,10 @@ export function Home() {
           <div className="home-empty">
             <EmptyState
               title="El próximo aviso puede ser el tuyo."
-              text="Todavía no hay avisos publicados. Registra una pérdida o un hallazgo y comparte un aviso básico con la comunidad."
+              text="Todavía no hay avisos. Si perdiste o encontraste algo, publícalo aquí para que lo vea la comunidad."
             >
               <Link to="/reportar" className="text-link">
-                Crear el primer camino <ArrowRight size={17} />
+                Publicar el primer aviso <ArrowRight size={17} />
               </Link>
             </EmptyState>
             <div className="home-empty-side">
@@ -209,8 +208,8 @@ export function Home() {
           </p>
           <h2 id="help-title">Para que todo esté claro.</h2>
           <p>
-            Reportar es el inicio. La devolución necesita la colaboración de las
-            personas.
+            Reportar es solo el primer paso. Para que algo vuelva, nos ayudamos
+            entre todos.
           </p>
         </div>
         <div className="help-questions">
@@ -285,20 +284,19 @@ export function Home() {
           <div className="purpose-copy">
             <p className="eyebrow">
               <span />
-              MÁS CERCA DE LO QUE PARECE
+              POR QUÉ LO HACEMOS
             </p>
             <h2>
-              Detrás de cada regreso,
+              Detrás de cada objeto que vuelve,
               <br />
-              hay alguien.
+              hay una persona.
             </h2>
             <p>
-              Una mochila puede guardar una jornada entera. Un cuaderno, meses
-              de esfuerzo. Queremos que la buena voluntad encuentre una forma
-              clara de ayudar.
+              Una mochila puede traer el trabajo de todo un día. Un cuaderno,
+              meses de tarea. Aquí, quien quiere ayudar encuentra cómo hacerlo.
             </p>
             <Link className="text-link" to="/reportar">
-              Sé parte del siguiente regreso <ArrowRight size={18} />
+              Ayuda a que algo vuelva <ArrowRight size={18} />
             </Link>
           </div>
         </Reveal>
