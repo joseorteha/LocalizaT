@@ -19,3 +19,4 @@
 **/node_modules/
 **/dist/
 frontend/public/exploracion-color.html
+backend/.models/

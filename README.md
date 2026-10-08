@@ -2,7 +2,7 @@
 
 LocalizaT es un prototipo para conectar a quienes perdieron y encontraron objetos en la Sierra de Zongolica. Permite publicar avisos, explorar un catálogo y un mapa por municipio, recibir posibles coincidencias y coordinar una devolución con verificación humana.
 
-El proyecto está en desarrollo. La búsqueda de coincidencias usa reglas actuales; la IA semántica planteada para una fase posterior todavía no está integrada. Las coincidencias son sugerencias, no pruebas de propiedad ni devoluciones automáticas.
+El proyecto está en desarrollo. Las coincidencias usan un **motor semántico local**: palabras normalizadas con sinónimos de la región más un modelo de lenguaje multilingüe que corre en el propio servidor, sin enviar descripciones privadas a terceros. Solo sugiere cuando las descripciones se parecen. Sobre casos de prueba ficticios redujo las falsas alarmas del motor anterior de 54 a 3 (`python manage.py evaluate_matching`); falta medirlo con casos reales. Las coincidencias son sugerencias, no pruebas de propiedad ni devoluciones automáticas.
 
 ## Tecnología
 
@@ -38,7 +38,7 @@ npm run build
 | --- | --- |
 | `backend/config/` | Configuración y rutas de Django. |
 | `backend/accounts/`, `backend/reports/` | Cuentas, reportes y catálogo público. |
-| `backend/matching/`, `backend/claims/`, `backend/custody/` | Coincidencias, reclamaciones y entrega. |
+| `backend/matching/`, `backend/claims/`, `backend/custody/` | Coincidencias (motores en `matching/scoring.py`, casos de evaluación en `matching/evaluation/`), reclamaciones y entrega. |
 | `backend/notifications/`, `backend/audit/` | Avisos y registro de decisiones. |
 | `frontend/src/pages/` | Inicio, exploración, reportes, espacio personal y operación. |
 | `frontend/src/components/`, `frontend/public/` | Componentes y recursos visuales de la aplicación. |
