@@ -24,93 +24,93 @@ export function ObjectArt({
           <path
             d="M80 95V67q0-32 40-32t40 32v28"
             fill="none"
-            stroke="#264E42"
+            stroke="#12343C"
             strokeWidth="14"
           />
           <path
             d="M71 89q0-35 49-35t49 35l13 93q2 20-19 20H77q-21 0-19-20Z"
-            fill="#E6B553"
-            stroke="#153F31"
+            fill="#D6E65A"
+            stroke="#12343C"
             strokeWidth="3"
           />
-          <path d="M72 104h97" stroke="#F9DB8A" strokeWidth="4" />
+          <path d="M72 104h97" stroke="#EEF6B8" strokeWidth="4" />
           <rect
             x="77"
             y="132"
             width="87"
             height="56"
             rx="15"
-            fill="#C58F32"
-            stroke="#153F31"
+            fill="#B5CB33"
+            stroke="#12343C"
             strokeWidth="3"
           />
           <path
             d="M86 146h68M125 147v12"
-            stroke="#153F31"
+            stroke="#12343C"
             strokeWidth="3"
             strokeLinecap="round"
           />
           <path
             d="M88 77h64"
-            stroke="#F9DB8A"
+            stroke="#EEF6B8"
             strokeWidth="5"
             strokeLinecap="round"
           />
-          <rect x="111" y="109" width="20" height="11" rx="3" fill="#F8EAC4" />
+          <rect x="111" y="109" width="20" height="11" rx="3" fill="#F6FADC" />
         </>
       ) : category === "book" ? (
         <>
           <path
             d="M66 40h109q11 0 11 12v135q0 17-17 17H66Z"
-            fill="#C7D8C9"
-            stroke="#173F32"
+            fill="#BCDDE1"
+            stroke="#12343C"
             strokeWidth="3"
           />
           <path
             d="M66 190h108q12 0 12 14H66q-17 0-17-14V55q0-15 17-15"
-            fill="#FCF9ED"
-            stroke="#173F32"
+            fill="#FBFDFC"
+            stroke="#12343C"
             strokeWidth="3"
           />
           <path
             d="M66 40v151M88 79h72M88 91h52M88 135h54"
             fill="none"
-            stroke="#173F32"
+            stroke="#12343C"
             strokeWidth="3"
             strokeLinecap="round"
           />
-          <path d="M142 40v53l13-10 13 10V40" fill="#E7B64F" />
+          <path d="M142 40v53l13-10 13 10V40" fill="#D6E65A" />
         </>
       ) : category === "clothing" ? (
         <>
           <path
             d="m92 48-46 30 23 43 19-10v83h65v-83l20 10 23-43-46-30q-28 22-58 0Z"
-            fill="#CBC6D9"
-            stroke="#173F32"
+            fill="#CFC8EC"
+            stroke="#12343C"
             strokeWidth="3"
             strokeLinejoin="round"
           />
           <path
             d="M93 49q25 45 56 0M89 180h64"
             fill="none"
-            stroke="#173F32"
+            stroke="#12343C"
             strokeWidth="3"
           />
-          <path d="m118 108 11 13-11 13-11-13Z" fill="#F9F7EF" />
+          <path d="m118 108 11 13-11 13-11-13Z" fill="#FFFFFF" />
         </>
       ) : category === "accessory" ? (
         <>
           <path
             d="m42 134 18-57 34-17M198 134l-18-57-34-17"
             fill="none"
-            stroke="#294A3E"
+            stroke="#12343C"
             strokeWidth="8"
             strokeLinecap="round"
           />
           <path
             d="M101 141q19-20 38 0"
             fill="none"
-            stroke="#294A3E"
+            stroke="#12343C"
             strokeWidth="7"
           />
           <rect
@@ -119,8 +119,8 @@ export function ObjectArt({
             width="67"
             height="46"
             rx="17"
-            fill="#E6BB62"
-            stroke="#294A3E"
+            fill="#D6E65A"
+            stroke="#12343C"
             strokeWidth="7"
           />
           <rect
@@ -129,13 +129,13 @@ export function ObjectArt({
             width="67"
             height="46"
             rx="17"
-            fill="#E6BB62"
-            stroke="#294A3E"
+            fill="#D6E65A"
+            stroke="#12343C"
             strokeWidth="7"
           />
           <path
             d="m55 131 21 27m77-27 21 27"
-            stroke="#F8DFA4"
+            stroke="#EEF6B8"
             strokeWidth="5"
           />
         </>
@@ -143,18 +143,18 @@ export function ObjectArt({
         <>
           <path
             d="m57 90 65-33 65 33v87l-65 32-65-32Z"
-            fill="#D3AF87"
-            stroke="#173F32"
+            fill="#D8B98E"
+            stroke="#12343C"
             strokeWidth="3"
             strokeLinejoin="round"
           />
           <path
             d="m57 90 65 33 65-33m-65 33v86M94 74l65 34v29"
             fill="none"
-            stroke="#173F32"
+            stroke="#12343C"
             strokeWidth="3"
           />
-          <path d="m94 74 24-12 64 33-23 13v29l-24 11v-29Z" fill="#ECD5B5" />
+          <path d="m94 74 24-12 64 33-23 13v29l-24 11v-29Z" fill="#F0DDC0" />
         </>
       )}
     </svg>
@@ -172,11 +172,11 @@ export function RouteScene() {
             height="24"
             patternUnits="userSpaceOnUse"
           >
-            <circle cx="2" cy="2" r="1" fill="#0F4D3A" opacity=".13" />
+            <circle cx="2" cy="2" r="1" fill="#FFFFFF" opacity=".14" />
           </pattern>
         </defs>
         <rect width="600" height="560" fill="url(#dots)" />
-        <g stroke="#A7BCA5" strokeWidth="1" opacity=".5">
+        <g stroke="#7FB3BA" strokeWidth="1" opacity=".35">
           <path d="M-40 300c120-180 200 210 390 40s250-70 320 10" />
           <path d="M-40 330c120-180 200 210 390 40s250-70 320 10" />
           <path d="M-40 360c120-180 200 210 390 40s250-70 320 10" />
@@ -189,7 +189,7 @@ export function RouteScene() {
         <path
           className="return-path"
           d="M100 400c-50-30-10-130 75-110s85 125 185 55 110-210 5-215-70 95 15 70 115-105 150-90"
-          stroke="#0F4D3A"
+          stroke="#D6E65A"
           strokeWidth="3"
           strokeDasharray="5 9"
           strokeLinecap="round"
@@ -198,11 +198,11 @@ export function RouteScene() {
           cx="100"
           cy="400"
           r="11"
-          fill="#F4B740"
-          stroke="#0F4D3A"
+          fill="#D6E65A"
+          stroke="#06252B"
           strokeWidth="3"
         />
-        <circle cx="530" cy="110" r="11" fill="#0F4D3A" />
+        <circle cx="530" cy="110" r="11" fill="#FFFFFF" />
       </svg>
       <div className="scene-ticket">
         <span>DE VUELTA A TI</span>

@@ -8,6 +8,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { api } from "../../api";
+import { municipalities } from "../../geography";
 import { categories, useLoad } from "../../lib";
 import {
   Button,
@@ -53,13 +54,13 @@ export function Explore() {
         description={
           params.get("kind") === "found"
             ? "Si reconoces tu objeto, abre el aviso y solicita su devolución. El equipo revisará tu propiedad antes de coordinar la entrega."
-            : "Encontrados: objetos que alguien quiere devolver. Se buscan: objetos que alguien perdió. Elige el tipo de aviso para revisar."
+            : "Encontrados: alguien quiere devolverlos. Se buscan: alguien los perdió."
         }
       >
         <div className="intro-stamp">
           <ShieldCheck size={25} />
           <span>
-            Solo datos generales
+            Solo datos generales{" "}
             <br />
             en cada aviso
           </span>
@@ -70,7 +71,7 @@ export function Explore() {
           <Search size={21} />
           <input
             name="q"
-            placeholder="¿Qué estás buscando?"
+            placeholder="Busca un objeto"
             defaultValue={params.get("q") ?? ""}
             aria-label="Buscar avisos"
             maxLength={80}
@@ -86,7 +87,7 @@ export function Explore() {
           onClick={() => setAdvanced((value) => !value)}
         >
           <SlidersHorizontal size={18} />
-          Filtros
+          <span className="filter-label">Filtros</span>
           {Object.keys(filters).filter((key) => key !== "page" && key !== "view").length > 0 && (
             <span className="filter-count">
               {Object.keys(filters).filter((key) => key !== "page" && key !== "view").length}
@@ -97,7 +98,7 @@ export function Explore() {
       <div className="catalogue-toolbar">
         <div className="segmented" aria-label="Tipo de aviso">
           {[
-            ["", "Todos los avisos"],
+            ["", "Todos"],
             ["found", "Encontrados"],
             ["lost", "Se buscan"],
           ].map(([value, label]) => (
@@ -116,7 +117,7 @@ export function Explore() {
             value={params.get("category") ?? ""}
             onChange={(event) => update("category", event.target.value)}
           >
-            <option value="">Todas las categorías</option>
+            <option value="">Tipo: todos</option>
             {categories.map((item) => (
               <option key={item.value} value={item.value}>
                 {item.label}
@@ -132,13 +133,20 @@ export function Explore() {
       {advanced && (
         <div className="advanced-filters">
           <label>
-            Localidad o zona
-            <input
+            Municipio
+            {/* Una lista en vez de texto libre: no hay que recordar cómo se
+                escribe, y no se consulta al servidor con cada letra. */}
+            <select
               value={params.get("area") ?? ""}
               onChange={(event) => update("area", event.target.value)}
-              placeholder="Ej. Zongolica, Tequila…"
-              maxLength={80}
-            />
+            >
+              <option value="">Toda la Sierra</option>
+              {municipalities.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             Desde

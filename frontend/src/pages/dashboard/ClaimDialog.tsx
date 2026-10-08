@@ -11,10 +11,12 @@ export function ClaimDialog({
   claimId,
   onClose,
   onUpdated,
+  closeOnBack = true,
 }: {
   claimId: number | null;
   onClose: () => void;
   onUpdated: () => void;
+  closeOnBack?: boolean;
 }) {
   const load = useLoad(
     () => (claimId ? api.claim(claimId) : Promise.resolve(null)),
@@ -39,6 +41,7 @@ export function ClaimDialog({
   }
   return (
     <Modal
+      closeOnBack={closeOnBack}
       open={claimId !== null}
       onOpenChange={(open) => {
         if (!open && !busy) onClose();

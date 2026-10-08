@@ -8,9 +8,8 @@ import {
   ShieldCheck,
   Sparkle,
 } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
 import { api } from "../api";
-import { useLoad } from "../lib";
+import { useLoad, usePrefersReducedMotion } from "../lib";
 import { RouteScene } from "../components/Art";
 import {
   EmptyState,
@@ -22,7 +21,7 @@ import {
 
 export function Home() {
   const latest = useLoad(() => api.publicReports({ page_size: "3" }));
-  const reduced = useReducedMotion();
+  const reduced = usePrefersReducedMotion();
   const location = useLocation();
   useEffect(() => {
     if (location.hash)
@@ -40,7 +39,7 @@ export function Home() {
     {
       number: "02",
       title: "Te avisamos si aparece.",
-      text: "Comparamos tu reporte con los demás y te avisamos si hay algo parecido. Tus detalles secretos nunca se publican.",
+      text: "Una inteligencia artificial dentro de LocalizaT compara tu descripción con las demás, aunque usen otras palabras. Si hay algo parecido, te avisamos.",
       icon: Sparkle,
     },
     {
@@ -53,31 +52,20 @@ export function Home() {
   return (
     <>
       <section className="hero container">
+        {/* Sin animaciones de entrada: lo primero que se ve debe ser útil al instante. */}
         <div className="hero-copy">
-          <Reveal>
-            <p className="eyebrow">
-              <span />
-              OBJETOS PERDIDOS Y ENCONTRADOS
-            </p>
-          </Reveal>
+          <p className="eyebrow">
+            <span />
+            OBJETOS PERDIDOS Y ENCONTRADOS
+          </p>
           <h1 aria-label="Lo encontrado puede volver.">
             {["Lo encontrado", "puede", "volver."].map((word, index) => (
               <span className={`hero-line line-${index}`} key={word}>
-                <motion.span
-                  initial={reduced ? false : { y: "110%" }}
-                  animate={{ y: 0 }}
-                  transition={{
-                    duration: 0.9,
-                    delay: 0.1 + index * 0.12,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                >
-                  {word}
-                </motion.span>
+                <span>{word}</span>
               </span>
             ))}
           </h1>
-          <Reveal delay={0.35}>
+          <div>
             <p className="hero-description">
               Reporta y busca objetos perdidos en la Sierra de Zongolica. Si
               encontraste algo, ayuda a que vuelva con su dueño.
@@ -86,7 +74,7 @@ export function Home() {
               <Link className="btn btn-primary" to="/reportar?kind=lost">
                 Perdí algo <ArrowUpRight size={19} />
               </Link>
-              <Link className="btn btn-secondary" to="/reportar?kind=found">
+              <Link className="btn btn-accent" to="/reportar?kind=found">
                 Encontré algo <ArrowUpRight size={19} />
               </Link>
             </div>
@@ -100,19 +88,60 @@ export function Home() {
                 El aviso es público; tu contacto y tus detalles privados no.
               </span>
             </div>
-          </Reveal>
+          </div>
         </div>
-        <Reveal className="hero-visual" delay={0.25}>
+        <div className="hero-visual">
           <RouteScene />
-        </Reveal>
+        </div>
       </section>
+      <section id="como-funciona" className="how-section">
+        <div className="container">
+          <Reveal className="section-heading">
+            <div>
+              <p className="eyebrow">
+                <span />
+                DEL ENCUENTRO AL REGRESO
+              </p>
+              <h2>
+                Un camino sencillo.
+                <br />
+                Un impacto cercano.
+              </h2>
+            </div>
+            <p>
+              La tecnología conecta los reportes.
+              <br />
+              Las personas hacen que algo vuelva.
+            </p>
+          </Reveal>
+          <div className="steps-grid">
+            {steps.map((step) => (
+              <Reveal key={step.number} className="step-card">
+                <div className="step-top">
+                  <span>{step.number}</span>
+                  <step.icon size={27} strokeWidth={1.5} />
+                </div>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+      {/* La franja corre en bucle: el segundo grupo repite el primero para que
+          no haya un corte; los lectores de pantalla solo leen el primero. */}
       <div className="community-ribbon">
         <div className="container">
-          <span>HECHO PARA NUESTRA SIERRA</span>
-          <span className="ribbon-star">✳</span>
-          <span>CADA HALLAZGO ABRE UNA POSIBILIDAD</span>
-          <span className="ribbon-star">✳</span>
-          <span>DE PERSONA A PERSONA</span>
+          {[false, true].map((copy) => (
+            <span key={String(copy)} className="ribbon-group" aria-hidden={copy || undefined}>
+              <span>HECHO PARA NUESTRA SIERRA</span>
+              <span className="ribbon-star">✳</span>
+              <span>CADA HALLAZGO ABRE UNA POSIBILIDAD</span>
+              <span className="ribbon-star">✳</span>
+              <span>DE PERSONA A PERSONA</span>
+              <span className="ribbon-star">✳</span>
+            </span>
+          ))}
         </div>
       </div>
       <section className="section container">
@@ -141,8 +170,8 @@ export function Home() {
           <ErrorBox message={latest.error} retry={latest.reload} />
         ) : latest.data && latest.data.results.length > 0 ? (
           <div className="card-grid">
-            {latest.data.results.map((report, index) => (
-              <Reveal key={report.id} delay={index * 0.08}>
+            {latest.data.results.map((report) => (
+              <Reveal key={report.id}>
                 <PublicCard report={report} />
               </Reveal>
             ))}
@@ -222,65 +251,31 @@ export function Home() {
           </details>
         </div>
       </section>
-      <section id="como-funciona" className="how-section">
-        <div className="container">
-          <Reveal className="section-heading">
-            <div>
-              <p className="eyebrow">
-                <span />
-                DEL ENCUENTRO AL REGRESO
-              </p>
-              <h2>
-                Un camino sencillo.
-                <br />
-                Un impacto cercano.
-              </h2>
-            </div>
-            <p>
-              La tecnología conecta los reportes.
-              <br />
-              Las personas hacen que algo vuelva.
-            </p>
-          </Reveal>
-          <div className="steps-grid">
-            {steps.map((step) => (
-              <Reveal key={step.number} className="step-card">
-                <div className="step-top">
-                  <span>{step.number}</span>
-                  <step.icon size={27} strokeWidth={1.5} />
-                </div>
-                <h3>{step.title}</h3>
-                <p>{step.text}</p>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
       <section className="purpose-section container">
         <Reveal className="purpose-card">
           <div className="purpose-art">
             <svg viewBox="0 0 400 260" fill="none" aria-hidden="true">
               <path
                 d="M-20 200c100-170 160-170 205-70s125 50 170-40 110 20 60 90"
-                stroke="#F4B740"
+                stroke="#D6E65A"
                 strokeWidth="5"
               />
               <path
                 d="M-20 220c100-170 160-170 205-70s125 50 170-40 110 20 60 90"
-                stroke="#5D8D6F"
+                stroke="#7FB3BA"
                 strokeWidth="2"
               />
-              <circle cx="160" cy="96" r="18" fill="#E5EBDC" />
-              <circle cx="234" cy="96" r="18" fill="#F4B740" />
+              <circle cx="160" cy="96" r="18" fill="#FFFFFF" />
+              <circle cx="234" cy="96" r="18" fill="#D6E65A" />
               <path
                 d="M133 174v-29q0-27 27-27t27 27v29m20 0v-29q0-27 27-27t27 27v29"
-                stroke="#E5EBDC"
+                stroke="#FFFFFF"
                 strokeWidth="5"
                 strokeLinecap="round"
               />
               <path
                 d="M180 153q18 15 35 0"
-                stroke="#F4B740"
+                stroke="#D6E65A"
                 strokeWidth="5"
                 strokeLinecap="round"
               />

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Plus } from "lucide-react";
 import { api } from "../../api";
-import { primaryClaim, reportProgress } from "../../domain";
+import { primaryClaim, reportProgress, type Tone } from "../../domain";
 import { useApp } from "../../context";
 import { categoryName, dateLabel, useLoad } from "../../lib";
 import {
@@ -11,6 +11,8 @@ import {
   StatusPill,
 } from "../../components/ui";
 import { ObjectArt } from "../../components/Art";
+
+const TONE_ORDER: Record<Tone, number> = { action: 0, wait: 1, ok: 2, closed: 3 };
 
 export function MyReports() {
   const { user } = useApp();
@@ -52,14 +54,19 @@ export function MyReports() {
         <span className="dashboard-unread-count">{load.data.length} {load.data.length === 1 ? "reporte" : "reportes"}</span>
       </div>
     <div className="own-report-grid">
-      {load.data.map((report) => {
-        const claim = primaryClaim(
-          claims.data?.filter(
-            (item) =>
-              item.lost_report === report.id && item.claimant === user?.id,
-          ) ?? [],
-        );
-        const progress = reportProgress(report, claim);
+      {load.data
+        .map((report) => {
+          const claim = primaryClaim(
+            claims.data?.filter(
+              (item) =>
+                item.lost_report === report.id && item.claimant === user?.id,
+            ) ?? [],
+          );
+          return { report, progress: reportProgress(report, claim) };
+        })
+        // Primero lo que necesita que la persona haga algo; lo cerrado, al final.
+        .sort((a, b) => TONE_ORDER[a.progress.tone] - TONE_ORDER[b.progress.tone])
+        .map(({ report, progress }) => {
         return (
           <Link
             key={report.id}

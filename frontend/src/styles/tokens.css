@@ -1,0 +1,199 @@
+/* ==========================================================================
+   LocalizaT · Tokens de diseño
+   Todo color, tamaño, sombra y movimiento sale de aquí. Para cambiar la
+   identidad basta con ajustar este archivo.
+   Paleta: azul petróleo (marca y texto) + lima (acento), sobre un lienzo frío.
+   ========================================================================== */
+
+@font-face {
+  font-family: Manrope;
+  /* WOFF2 con solo los caracteres del español (24 KB); el TTF completo
+     queda de respaldo para navegadores que no conocen WOFF2. */
+  src:
+    url("/fonts/Manrope-variable-latin.woff2") format("woff2"),
+    url("/fonts/Manrope-variable.ttf") format("truetype");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+:root {
+  /* Petróleo */
+  --petrol-950: #06252b;
+  --petrol-900: #0a3640;
+  --petrol-800: #0e4e5a; /* marca */
+  --petrol-700: #13606e;
+  --petrol-600: #1a7686;
+  --petrol-300: #9ccbd1;
+  --petrol-200: #c3e0e3;
+  --petrol-100: #dcedef;
+  --petrol-50: #eef7f7;
+
+  /* Lima */
+  --lime-500: #c8dc3c;
+  --lime-400: #d6e65a; /* acento */
+  --lime-300: #e3ef8a;
+  --lime-200: #eef6b8;
+  --lime-100: #f6fadc;
+  --lime-ink: #3a4706; /* texto sobre lima */
+
+  /* Neutros fríos */
+  --canvas: #f4f8f7;
+  --surface: #ffffff;
+  --surface-2: #eef4f3;
+  --surface-3: #e4eded;
+  --ink: #0f2a30;
+  --ink-2: #33505a;
+  --muted: #56707a; /* 4.6:1 sobre el lienzo */
+  --line: #dbe6e5;
+  --line-strong: #b8cdcc;
+
+  /* Estados */
+  --ok: #17643f;
+  --ok-bg: #dcf2e4;
+  --wait: #7a5200;
+  --wait-bg: #fcf0d2;
+  --danger: #a6231b;
+  --danger-bg: #fbe8e6;
+
+  /* Tintes de categoría (fondo de las ilustraciones) */
+  --cat-bag: #eef6c6;
+  --cat-book: #dcedef;
+  --cat-clothing: #e9e5f6;
+  --cat-accessory: #f7edd2;
+  --cat-other: #f1e7da;
+
+  /* Tipografía */
+  --font: Manrope, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fs-xs: 0.8125rem; /* 13 */
+  --fs-sm: 0.875rem; /* 14 */
+  --fs-base: 1rem; /* 16 */
+  --fs-md: 1.125rem; /* 18 */
+  --fs-lg: 1.25rem; /* 20 */
+  --fs-xl: clamp(1.5rem, 1.2rem + 1.2vw, 1.875rem);
+  --fs-2xl: clamp(1.875rem, 1.4rem + 2vw, 2.75rem);
+  --fs-3xl: clamp(2.375rem, 1.6rem + 3.6vw, 4.25rem);
+  --fs-display: clamp(2.875rem, 1.6rem + 6vw, 6.25rem);
+  --tracking-tight: -0.035em;
+  --tracking-wide: 0.12em;
+
+  /* Espacio y forma */
+  --gutter: clamp(16px, 4vw, 40px);
+  --page-max: 1220px;
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --r-pill: 999px;
+
+  /* Sombras teñidas de petróleo: profundidad sin ensuciar */
+  --sh-1: 0 1px 2px rgb(6 37 43 / 0.06), 0 1px 1px rgb(6 37 43 / 0.04);
+  --sh-2: 0 6px 16px -6px rgb(6 37 43 / 0.14), 0 2px 4px rgb(6 37 43 / 0.05);
+  --sh-3: 0 22px 48px -18px rgb(6 37 43 / 0.32), 0 6px 14px -8px rgb(6 37 43 / 0.12);
+  --sh-lime: 0 10px 30px -10px rgb(158 180 30 / 0.7);
+  --ring: 0 0 0 4px rgb(214 230 90 / 0.6);
+
+  /* Movimiento */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t-fast: 160ms;
+  --t-base: 260ms;
+  --t-slow: 520ms;
+
+  /* Capas */
+  --z-header: 50;
+  --z-nav: 45;
+  --z-overlay: 100;
+  --z-toast: 120;
+
+  /* Altura de la barra inferior en celular (para no tapar contenido) */
+  --bottom-nav-space: 0px;
+
+  /* Tokens con significado (cambian con el tema) */
+  --brand-text: var(--petrol-800); /* petróleo usado como texto, borde o ícono */
+  --brand-text-hover: var(--petrol-600);
+  --header-bg: rgb(244 248 247 / 0.78);
+  --glass: rgb(255 255 255 / 0.7);
+  --glass-strong: rgb(255 255 255 / 0.92);
+  --invalid-bg: #fffafa;
+  --art-bg: var(--surface-2); /* fondo detrás de una ilustración de trazo oscuro */
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%230e4e5a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 8 5 5 5-5'/%3E%3C/svg%3E");
+  --hero-gradient: linear-gradient(100deg, var(--petrol-800) 10%, var(--petrol-600) 55%, #2a9d8f 95%);
+
+  color-scheme: light;
+}
+
+/* ---------- Modo oscuro ----------
+   Se activa con data-theme="dark" en <html>. Un script en index.html lo
+   decide antes de pintar (elección guardada o, si no hay, el modo del
+   sistema) para que no haya un destello claro al cargar. */
+:root[data-theme="dark"] {
+  /* Tintes de petróleo: oscuros, para paneles y bordes sobre el lienzo oscuro */
+  --petrol-50: #0f3038;
+  --petrol-100: #143a43;
+  --petrol-200: #1f525d;
+  --petrol-300: #2f7380;
+  /* Rellenos de marca un poco más claros para que destaquen en la oscuridad */
+  --petrol-600: #2aa3b4;
+  --petrol-700: #1d8796;
+  --petrol-800: #177483;
+
+  --lime-100: #1b290c; /* panel suave: oliva oscuro; lime-200 sigue claro para chips */
+
+  --canvas: #061a1f;
+  --surface: #0b252b;
+  --surface-2: #102f36;
+  --surface-3: #173b43;
+  --ink: #e6f1f1;
+  --ink-2: #b4cbcd;
+  --muted: #8ca8ac;
+  --line: #1c3e45;
+  --line-strong: #2c5660;
+
+  --ok: #7fd9a4;
+  --ok-bg: #10392a;
+  --wait: #f2c766;
+  --wait-bg: #382c0b;
+  --danger: #ff9e94;
+  --danger-bg: #3d1513;
+
+  /* Las ilustraciones tienen trazo oscuro: sus fondos siguen claros, algo atenuados. */
+  --cat-bag: #dfe8b4;
+  --cat-book: #c8dee1;
+  --cat-clothing: #d8d3ea;
+  --cat-accessory: #e8dcbb;
+  --cat-other: #e2d6c5;
+  --art-bg: #d9e5e4;
+
+  --sh-1: 0 1px 2px rgb(0 0 0 / 0.35);
+  --sh-2: 0 8px 20px -8px rgb(0 0 0 / 0.55), 0 2px 4px rgb(0 0 0 / 0.3);
+  --sh-3: 0 26px 52px -18px rgb(0 0 0 / 0.75), 0 6px 14px -8px rgb(0 0 0 / 0.4);
+
+  --brand-text: #8fd6df;
+  --brand-text-hover: #bdeaef;
+  --header-bg: rgb(6 26 31 / 0.78);
+  --glass: rgb(11 37 43 / 0.72);
+  --glass-strong: rgb(11 37 43 / 0.92);
+  --invalid-bg: #2a1311;
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%238fd6df' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 8 5 5 5-5'/%3E%3C/svg%3E");
+  --hero-gradient: linear-gradient(100deg, #8fd6df 10%, #b9e9c4 55%, var(--lime-400) 95%);
+
+  color-scheme: dark;
+}
+
+/* Superficies que siempre son claras (tarjetas flotantes, tarjeta lima,
+   fondos de ilustración): su texto debe seguir oscuro en cualquier tema. */
+.route-scene,
+.step-card:nth-child(2),
+.home-empty-side {
+  --ink: #0f2a30;
+  --ink-2: #33505a;
+  --muted: #56707a;
+  --brand-text: #0e4e5a;
+}
+
+@media (max-width: 899px) {
+  :root {
+    --bottom-nav-space: calc(92px + env(safe-area-inset-bottom));
+  }
+}

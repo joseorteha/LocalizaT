@@ -1,0 +1,39 @@
+{
+  "nota": "Casos FICTICIOS de control, escritos después de fijar el diccionario regional y SIN ampliarlo para ellos. Usan sinónimos que el diccionario no conoce, para medir si un motor generaliza o solo reconoce lo que ya se le enseñó. No miden la precisión en campo.",
+  "perdidas": [
+    {"id": "N01", "category": "bag", "description": "Cangurera negra con dos cierres", "area": "Zongolica", "dias": 0, "hallazgo": "M01"},
+    {"id": "N02", "category": "clothing", "description": "Playera blanca del uniforme de la secundaria", "area": "Tequila", "dias": 1, "hallazgo": "M02"},
+    {"id": "N03", "category": "clothing", "description": "Chanclas azules de hule, número 24", "area": "Río de Tehuipango", "dias": 0, "hallazgo": "M03"},
+    {"id": "N04", "category": "other", "description": "Cobija gruesa de lana con figuras de venado", "area": "Mixtla", "dias": 2, "hallazgo": "M04"},
+    {"id": "N05", "category": "accessory", "description": "Audífonos blancos con cable", "area": "Zongolica", "dias": 0, "hallazgo": "M05"},
+    {"id": "N06", "category": "accessory", "description": "Monedero rojo pequeño de cierre", "area": "Mercado de Zongolica", "dias": 0, "hallazgo": "M06"},
+    {"id": "N07", "category": "clothing", "description": "Bufanda verde de estambre", "area": "Tlaquilpa", "dias": 1, "hallazgo": "M07"},
+    {"id": "N08", "category": "clothing", "description": "Tenis blancos de niño con agujetas rojas", "area": "Primaria de Tequila", "dias": 0, "hallazgo": "M08"},
+    {"id": "N09", "category": "book", "description": "Recetario de cocina escrito a mano", "area": "Astacinga", "dias": 1, "hallazgo": "M09"},
+    {"id": "N10", "category": "other", "description": "Lonchera azul con mi almuerzo", "area": "Bachillerato de Zongolica", "dias": 0, "hallazgo": "M10"},
+    {"id": "N11", "category": "accessory", "description": "Pulsera de piedritas de colores", "area": "Tequila", "dias": 0, "hallazgo": "M11"},
+    {"id": "N12", "category": "clothing", "description": "Sombrero de palma con listón negro", "area": "Los Reyes", "dias": 2, "hallazgo": "M12"},
+    {"id": "N13", "category": "accessory", "description": "Collar de semillas cafés", "area": "Zongolica", "dias": 0, "hallazgo": null}
+  ],
+  "hallazgos": [
+    {"id": "M01", "category": "bag", "description": "Riñonera de color negro, tiene dos compartimentos", "area": "Zongolica", "dias": 1},
+    {"id": "M02", "category": "clothing", "description": "camiseta blanca de escuela, parece de uniforme", "area": "Tequila", "dias": 1},
+    {"id": "M03", "category": "clothing", "description": "par de sandalias azules de plástico para niño", "area": "Tehuipango", "dias": 1},
+    {"id": "M04", "category": "other", "description": "frazada de lana con dibujos de animales", "area": "Mixtla de Altamirano", "dias": 3},
+    {"id": "M05", "category": "accessory", "description": "auriculares de color blanco, alámbricos", "area": "Zongolica", "dias": 1},
+    {"id": "M06", "category": "accessory", "description": "cartera chiquita de color rojo", "area": "Zongolica", "dias": 0},
+    {"id": "M07", "category": "clothing", "description": "chalina tejida verde", "area": "Tlaquilpa", "dias": 2},
+    {"id": "M08", "category": "clothing", "description": "zapatos deportivos blancos de niño, cordones rojos", "area": "Tequila", "dias": 1},
+    {"id": "M09", "category": "book", "description": "libreta con recetas de comida, letra a mano", "area": "Astacinga", "dias": 1},
+    {"id": "M10", "category": "other", "description": "bolsa térmica azul para la comida, con un recipiente", "area": "Zongolica", "dias": 1},
+    {"id": "M11", "category": "accessory", "description": "brazalete de cuentas de varios colores", "area": "Tequila", "dias": 1},
+    {"id": "M12", "category": "clothing", "description": "sombrero tejido de palma, cinta negra", "area": "Los Reyes", "dias": 3},
+    {"id": "M13", "category": "bag", "description": "mochila negra con tres cierres", "area": "Zongolica", "dias": 0},
+    {"id": "M14", "category": "clothing", "description": "camiseta roja de futbol", "area": "Tequila", "dias": 1},
+    {"id": "M15", "category": "clothing", "description": "sandalias negras de mujer", "area": "Tehuipango", "dias": 0},
+    {"id": "M16", "category": "accessory", "description": "audífonos negros inalámbricos en su estuche", "area": "Zongolica", "dias": 0},
+    {"id": "M17", "category": "clothing", "description": "zapatos negros de vestir", "area": "Tequila", "dias": 0},
+    {"id": "M18", "category": "accessory", "description": "cartera de piel café de hombre", "area": "Zongolica", "dias": 0},
+    {"id": "M19", "category": "other", "description": "cobija roja delgada", "area": "Mixtla", "dias": 1}
+  ]
+}
