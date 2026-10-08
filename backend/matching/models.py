@@ -16,6 +16,15 @@ class MatchingJob(models.Model):
     processed_at = models.DateTimeField(null=True, blank=True)
 
 
+class ReportEmbedding(models.Model):
+    """Vector de la descripción para el motor semántico; se calcula una sola vez."""
+
+    report = models.OneToOneField(Report, on_delete=models.CASCADE, related_name="embedding")
+    model_name = models.CharField(max_length=120)
+    vector = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class MatchSuggestion(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pendiente"
