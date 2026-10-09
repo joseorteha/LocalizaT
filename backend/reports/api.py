@@ -198,6 +198,9 @@ PUBLIC_CATEGORY_NAME = {
     Report.Category.CLOTHING: "prenda de ropa",
     Report.Category.ACCESSORY: "accesorio",
     Report.Category.BOOK: "libro o cuaderno",
+    Report.Category.PHONE: "celular",
+    Report.Category.CREDENTIAL: "credencial",
+    Report.Category.DOCUMENT: "documento",
     Report.Category.OTHER: "objeto",
 }
 

@@ -31,8 +31,9 @@ export function Terms() {
         <ul>
           <li>Da información verdadera sobre lo que perdiste o encontraste.</li>
           <li>
-            No reportes documentos, credenciales ni celulares; por ahora solo
-            recibimos objetos como mochilas, ropa, libros o accesorios.
+            Con objetos delicados (celulares, credenciales o documentos) ten más
+            cuidado: no compartas contraseñas, NIP ni datos bancarios. Para esos
+            casos el equipo hace una verificación más estricta antes de entregar.
           </li>
           <li>
             No publiques datos personales —tuyos o de otras personas—, ni
