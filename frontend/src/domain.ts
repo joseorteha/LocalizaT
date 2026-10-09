@@ -9,12 +9,23 @@ export const KIND: Record<Kind, string> = {
   found: "Encontré algo",
 };
 
-export type Category = "bag" | "clothing" | "accessory" | "book" | "other";
+export type Category =
+  | "bag"
+  | "clothing"
+  | "accessory"
+  | "book"
+  | "phone"
+  | "credential"
+  | "document"
+  | "other";
 export const CATEGORY: Record<Category, string> = {
   bag: "Bolsas y mochilas",
   clothing: "Ropa",
   accessory: "Accesorios",
   book: "Libros y cuadernos",
+  phone: "Celulares",
+  credential: "Credenciales",
+  document: "Documentos",
   other: "Otros objetos",
 };
 // Lista para los selectores de categoría (orden de aparición en la interfaz).
@@ -68,6 +79,9 @@ const CATEGORY_ONE: Record<Category, string> = {
   clothing: "prenda de ropa",
   accessory: "accesorio",
   book: "libro o cuaderno",
+  phone: "celular",
+  credential: "credencial",
+  document: "documento",
   other: "objeto",
 };
 
@@ -77,6 +91,9 @@ const DESCRIPTION_EXAMPLE: Record<Category, string> = {
   clothing: "Ej.: sudadera gris con capucha, talla mediana",
   accessory: "Ej.: lentes de armazón negro en estuche café",
   book: "Ej.: cuaderno verde de rayas con forro de plástico",
+  phone: "Ej.: celular negro con funda azul y una calcomanía",
+  credential: "Ej.: credencial dentro de una mica transparente",
+  document: "Ej.: unos documentos en un folder amarillo",
   other: "Ej.: termo metálico rojo con tapa negra",
 };
 export const descriptionExample = (category: string) =>

@@ -18,7 +18,10 @@ class Report(models.Model):
         CLOTHING = "clothing", "Ropa"
         ACCESSORY = "accessory", "Accesorio"
         BOOK = "book", "Libro o cuaderno"
-        OTHER = "other", "Otro objeto no sensible"
+        PHONE = "phone", "Celular"
+        CREDENTIAL = "credential", "Credencial o identificación"
+        DOCUMENT = "document", "Documento"
+        OTHER = "other", "Otro objeto"
 
     class Holder(models.TextChoices):
         FINDER = "finder", "Lo conserva quien lo encontró"

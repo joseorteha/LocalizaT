@@ -960,6 +960,18 @@ input[type="radio"] {
 .category-accessory.detail-art {
   background: var(--cat-accessory);
 }
+.category-phone .public-card-art,
+.category-phone.detail-art {
+  background: var(--cat-phone);
+}
+.category-credential .public-card-art,
+.category-credential.detail-art {
+  background: var(--cat-credential);
+}
+.category-document .public-card-art,
+.category-document.detail-art {
+  background: var(--cat-document);
+}
 .category-other .public-card-art,
 .category-other.detail-art {
   background: var(--cat-other);
