@@ -8,8 +8,19 @@ import { api, type MapZone } from "../../api";
 import { useLoad } from "../../lib";
 import { ErrorBox } from "../../components/ui";
 
-const TILES = import.meta.env.VITE_MAP_TILE_URL || "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 maplibregl.setWorkerUrl(mapWorkerUrl);
+
+// Mapa base limpio y minimalista (CARTO), para que no compita con los avisos.
+// Se adapta al tema: claro en modo claro, oscuro en modo oscuro.
+const TILE_OVERRIDE = import.meta.env.VITE_MAP_TILE_URL as string | undefined;
+const BASEMAPS: Record<"light" | "dark", string[]> = {
+  light: ["a", "b", "c", "d"].map((s) => `https://${s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png`),
+  dark: ["a", "b", "c", "d"].map((s) => `https://${s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png`),
+};
+const currentTheme = (): "light" | "dark" =>
+  document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+const basemapTiles = (theme: "light" | "dark"): string[] =>
+  TILE_OVERRIDE ? [TILE_OVERRIDE] : BASEMAPS[theme];
 
 function zoneLink(zone: MapZone, filters: Record<string, string>) {
   const next = new URLSearchParams(filters);
@@ -48,19 +59,30 @@ export function MapCatalogue({ filters }: { filters: Record<string, string> }) {
           sources: {
             terrain: {
               type: "raster",
-              tiles: [TILES],
+              tiles: basemapTiles(currentTheme()),
               tileSize: 256,
-              attribution: "© OpenStreetMap contributors",
+              attribution: "© OpenStreetMap, © CARTO",
             },
           },
           layers: [{ id: "terrain", type: "raster", source: "terrain" }],
         },
       });
       instance.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-      instance.addControl(new maplibregl.AttributionControl({ compact: false }), "bottom-right");
+      instance.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
       map.current = instance;
       setMapReady(true);
+      // Cambiar el mapa base cuando la persona cambia entre modo claro y oscuro.
+      const applyTheme = () => {
+        const source = instance.getSource("terrain") as maplibregl.RasterTileSource | undefined;
+        source?.setTiles(basemapTiles(currentTheme()));
+      };
+      const themeObserver = new MutationObserver(applyTheme);
+      themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      });
       return () => {
+        themeObserver.disconnect();
         markers.current.forEach((marker) => marker.remove());
         markers.current = [];
         instance.remove();
@@ -131,7 +153,7 @@ export function MapCatalogue({ filters }: { filters: Record<string, string> }) {
           {!zones.length && !load.data?.without_municipality && <p className="map-region-note">Todavía no hay avisos con esos filtros.</p>}
         </>
       )}
-      <p className="map-attribution-note">Cartografía © OpenStreetMap contributors. Referencias municipales: INEGI, cuadro 1.2 de Veracruz.</p>
+      <p className="map-attribution-note">Cartografía © OpenStreetMap, © CARTO. Referencias municipales: INEGI, cuadro 1.2 de Veracruz.</p>
     </section>
   );
 }
