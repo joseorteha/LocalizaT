@@ -60,6 +60,9 @@
   --cat-book: #dcedef;
   --cat-clothing: #e9e5f6;
   --cat-accessory: #f7edd2;
+  --cat-phone: #dbe8f3;
+  --cat-credential: #f4ecd4;
+  --cat-document: #e6edee;
   --cat-other: #f1e7da;
 
   /* Tipografía */
@@ -162,6 +165,9 @@
   --cat-book: #c8dee1;
   --cat-clothing: #d8d3ea;
   --cat-accessory: #e8dcbb;
+  --cat-phone: #cadbec;
+  --cat-credential: #e9ddbf;
+  --cat-document: #d4e0e2;
   --cat-other: #e2d6c5;
   --art-bg: #d9e5e4;
 

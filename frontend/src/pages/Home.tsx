@@ -218,9 +218,11 @@ export function Home() {
           <details>
             <summary>¿Qué puedo reportar?</summary>
             <p>
-              Por ahora, mochilas, bolsas, ropa, libros, cuadernos, accesorios y
-              otros objetos no sensibles. Todavía no recibimos reportes de
-              celulares, credenciales ni documentos.
+              Casi cualquier objeto: mochilas, bolsas, ropa, libros, cuadernos,
+              accesorios, y también celulares, credenciales y documentos. Para
+              los objetos delicados —como un celular o una identificación— el
+              equipo verifica con más cuidado antes de devolverlos, y nunca
+              debes escribir contraseñas, NIP ni datos del banco.
             </p>
           </details>
           <details>

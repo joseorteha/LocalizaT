@@ -139,6 +139,28 @@ export function ObjectArt({
             strokeWidth="5"
           />
         </>
+      ) : category === "phone" ? (
+        <>
+          <rect x="83" y="40" width="74" height="160" rx="18" fill="#C7D6EA" stroke="#12343C" strokeWidth="3" />
+          <rect x="95" y="62" width="50" height="104" rx="7" fill="#FBFDFC" stroke="#12343C" strokeWidth="2" />
+          <path d="M110 52h20" stroke="#12343C" strokeWidth="3" strokeLinecap="round" />
+          <circle cx="120" cy="182" r="9" fill="#D6E65A" stroke="#12343C" strokeWidth="2" />
+          <path d="M106 88h28M106 106h28M106 124h18" stroke="#9FB7BD" strokeWidth="4" strokeLinecap="round" />
+        </>
+      ) : category === "credential" ? (
+        <>
+          <rect x="40" y="74" width="160" height="100" rx="13" fill="#E7DCC0" stroke="#12343C" strokeWidth="3" />
+          <rect x="56" y="92" width="46" height="54" rx="7" fill="#FBFDFC" stroke="#12343C" strokeWidth="2" />
+          <circle cx="79" cy="110" r="9" fill="#D6E65A" stroke="#12343C" strokeWidth="2" />
+          <path d="M66 140q13-16 26 0" fill="#D6E65A" stroke="#12343C" strokeWidth="2" strokeLinejoin="round" />
+          <path d="M118 102h64M118 120h64M118 138h44" stroke="#12343C" strokeWidth="4" strokeLinecap="round" />
+        </>
+      ) : category === "document" ? (
+        <>
+          <path d="M72 38h62l34 34v130H72Z" fill="#FBFDFC" stroke="#12343C" strokeWidth="3" strokeLinejoin="round" />
+          <path d="M134 38v34h34" fill="#D6E65A" stroke="#12343C" strokeWidth="3" strokeLinejoin="round" />
+          <path d="M90 98h58M90 118h58M90 138h58M90 158h38" stroke="#12343C" strokeWidth="4" strokeLinecap="round" />
+        </>
       ) : (
         <>
           <path

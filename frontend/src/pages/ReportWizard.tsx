@@ -411,8 +411,9 @@ export function ReportWizard() {
                   ))}
                 </div>
                 <p className="hint">
-                  Por ahora no recibimos credenciales, documentos ni celulares;
-                  solo objetos como mochilas, ropa, libros o accesorios.
+                  Puedes reportar casi cualquier objeto. Para celulares,
+                  credenciales o documentos, el equipo verifica con más cuidado;
+                  nunca escribas contraseñas, NIP ni datos del banco.
                 </p>
               </>
             )}
