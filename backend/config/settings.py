@@ -99,10 +99,103 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# Proxies delante de Django (Caddy en producción = 1). Con esto los límites de
+# intentos ven la IP real de la persona y no la del proxy.
+NUM_PROXIES = int(os.environ.get("NUM_PROXIES", "0"))
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    "NUM_PROXIES": NUM_PROXIES,
+    # Freno general contra abuso. Las acciones sensibles tienen su propio límite.
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "120/min",
+        "user": "240/min",
+        "report_create": "20/hour",
+        "abuse": "10/hour",
+        "photo_upload": "30/hour",
+        "client_error": "20/hour",
+        "feedback": "10/hour",
+    },
+}
+
+# Caché compartida entre los procesos de gunicorn y el worker: guarda los
+# contadores de intentos y el latido del worker. Usa la propia base de datos
+# para no sumar otro servicio (crear con `manage.py createcachetable`).
+CACHES = {"default": {
+    "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+    "LOCATION": "localizat_cache",
+}}
+if os.environ.get("TEST_DB_ENGINE") == "sqlite":
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+
+# Límites de los formularios de cuenta (intentos por ventana de tiempo).
+AUTH_RATE_LIMITS = {
+    "login_ip": (20, 15 * 60),        # por IP
+    "login_email": (6, 15 * 60),      # por correo: frena adivinar contraseñas
+    "signup_ip": (8, 60 * 60),
+    "google_ip": (30, 15 * 60),
+    "reset_ip": (6, 60 * 60),
+    "reset_email": (3, 60 * 60),
+    "verify_resend": (3, 60 * 60),
+}
+
+# Dirección pública del sitio: se usa en los enlaces de los correos.
+SITE_URL = os.environ.get("SITE_URL", "").rstrip("/") or (
+    f"https://{os.environ['DOMAIN']}" if os.environ.get("DOMAIN") else "http://localhost:5173"
+)
+
+# Correo saliente (avisos, recuperar contraseña, verificar cuenta). Funciona con
+# cualquier SMTP: Brevo, Resend, Gmail con contraseña de aplicación… Sin
+# EMAIL_HOST, los correos se escriben en el registro del servidor y no salen.
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1" and EMAIL_PORT != 465
+EMAIL_USE_SSL = EMAIL_PORT == 465
+EMAIL_TIMEOUT = 15
+EMAIL_BACKEND = (
+    "django.core.mail.backends.smtp.EmailBackend" if EMAIL_HOST
+    else "django.core.mail.backends.console.EmailBackend"
+)
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "LocalizaT <no-responder@localizat.mx>")
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 2  # el enlace para cambiar la contraseña dura 2 horas
+
+# Fotos privadas de los objetos: viven FUERA de la carpeta pública y solo se
+# entregan a través de Django a quien tiene permiso (dueño del reporte o equipo).
+PRIVATE_MEDIA_ROOT = Path(os.environ.get("PRIVATE_MEDIA_ROOT", str(BASE_DIR / "private-media")))
+PHOTO_MAX_BYTES = 8 * 1024 * 1024
+PHOTO_MAX_PER_REPORT = 3
+PHOTO_MAX_SIDE = 1600
+
+# Denuncias: con este número de denuncias abiertas, el aviso sale del catálogo
+# y pasa a revisión del equipo hasta que alguien decida.
+ABUSE_AUTO_REVIEW_THRESHOLD = 3
+
+# Monitoreo de errores (opcional). Crea un proyecto gratis en sentry.io y pon su DSN.
+SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
+if SENTRY_DSN:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        send_default_pii=False,  # sin correos ni IP de las personas
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.05")),
+        environment=os.environ.get("SENTRY_ENVIRONMENT", "produccion"),
+    )
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {"localizat": {"handlers": ["console"], "level": "INFO"}},
 }
 
 LANGUAGE_CODE = "es-mx"

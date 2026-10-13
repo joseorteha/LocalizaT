@@ -14,10 +14,15 @@ services:
     environment:
       MATCHING_ENGINE: semantic
       MATCHING_MODEL_CACHE: /models
+      # Fotos privadas de los objetos (nunca las sirve Caddy directamente).
+      PRIVATE_MEDIA_ROOT: /data/private-media
+      # Caddy está delante: la IP real viene en X-Forwarded-For (límites de intentos).
+      NUM_PROXIES: "1"
     volumes:
       # El modelo (~220 MB) se descarga una vez y se comparte con el worker.
       - matching_models:/models
-    command: sh -c "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120"
+      - private_media:/data/private-media
+    command: sh -c "python manage.py migrate --noinput && python manage.py createcachetable && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120"
     expose:
       - "8000"
 
@@ -54,5 +59,6 @@ services:
 
 volumes:
   matching_models:
+  private_media:
   caddy_data:
   caddy_config:

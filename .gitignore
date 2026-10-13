@@ -7,6 +7,8 @@
 !/compose.prod.yaml
 !/Caddyfile
 !/DESPLIEGUE.md
+!/deploy/
+!/docs/
 !/backend/
 !/frontend/
 
@@ -24,3 +26,8 @@
 frontend/public/exploracion-color.html
 backend/.models/
 !/.env.prod.example
+backend/private-media/
+**/casos_reales*.json
+/deploy/respaldos/
+# Documentos internos: planeación, prompts, materiales del curso.
+docs/_privado/

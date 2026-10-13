@@ -17,7 +17,7 @@ export function Privacy() {
         description="LocalizaT es un proyecto comunitario en desarrollo para reportar y buscar objetos perdidos y encontrados en la Sierra de Zongolica. Aquí explicamos qué información usa la plataforma y quién puede verla."
       />
       <article className="legal-prose">
-        <p className="legal-updated">Última actualización: 8 de octubre de 2026.</p>
+        <p className="legal-updated">Última actualización: 12 de octubre de 2026.</p>
 
         <h2>Qué información guardamos</h2>
         <ul>
@@ -37,9 +37,26 @@ export function Privacy() {
             equipo para comprobar que el objeto es tuyo.
           </li>
           <li>
+            <strong>Fotos del objeto</strong> (opcionales). Son privadas: solo
+            las ven tú y el equipo para comprobar que el objeto es tuyo. Al
+            subirlas les quitamos los datos ocultos que guarda el celular, como
+            la ubicación.
+          </li>
+          <li>
             <strong>Datos de uso necesarios para el servicio,</strong> como la
             sesión que mantiene tu inicio de sesión activo y, si activas avisos,
             la suscripción de este navegador.
+          </li>
+          <li>
+            <strong>Comentarios y denuncias.</strong> Lo que nos escribes en
+            «¿Algo no se entendió?» y las denuncias de avisos. Para no contar dos
+            veces la misma denuncia guardamos una huella cifrada de tu conexión,
+            no tu dirección IP.
+          </li>
+          <li>
+            <strong>Errores técnicos.</strong> Si algo falla en tu navegador,
+            registramos la página y el mensaje del error para arreglarlo, sin tu
+            correo ni tus reportes.
           </li>
         </ul>
 
@@ -47,12 +64,18 @@ export function Privacy() {
         <ul>
           <li>Comparar reportes y mostrarte posibles coincidencias.</li>
           <li>Coordinar la devolución y comprobar quién es la persona dueña.</li>
-          <li>Mantener tu cuenta y tu sesión.</li>
+          <li>
+            Avisarte por correo de posibles coincidencias y de cambios en tus
+            solicitudes, si confirmaste tu correo. Puedes apagarlo en Mi espacio.
+          </li>
+          <li>Mantener tu cuenta y tu sesión, y ayudarte a recuperarla.</li>
+          <li>Retirar avisos que incumplan las reglas y mejorar la plataforma.</li>
         </ul>
         <p>
           No usamos tus reportes para publicidad. Para operar la plataforma
-          utilizamos servicios de alojamiento y, si tú lo eliges, el acceso con
-          Google y los avisos del navegador.
+          utilizamos servicios de alojamiento, de envío de correo y de registro
+          de errores técnicos y, si tú lo eliges, el acceso con Google y los
+          avisos del navegador.
         </p>
 
         <h2>Qué es público y qué es privado</h2>

@@ -13,3 +13,12 @@ def queue_match_push(sender, instance, created, **kwargs):
         [PushDelivery(notification=instance, subscription=subscription) for subscription in subscriptions],
         ignore_conflicts=True,
     )
+
+
+@receiver(post_save, sender=Notification)
+def queue_notification_email(sender, instance, created, **kwargs):
+    # Copia por correo de cada aviso, para quien no abre la app seguido.
+    if created:
+        from .mail import queue_for_notification
+
+        queue_for_notification(instance)

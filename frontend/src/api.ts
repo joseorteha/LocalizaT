@@ -2,6 +2,9 @@ export type User = {
   id: number;
   email: string;
   is_staff: boolean;
+  email_verified: boolean;
+  email_notifications: boolean;
+  has_password: boolean;
   is_point_member: boolean;
   point_ids: number[];
 };
@@ -76,6 +79,7 @@ export type CaseReport = {
   occurred_on: string;
   owner_email: string;
   ownership_clue?: string;
+  photos?: string[];
 };
 export type Verification = {
   claimant_email: string;
@@ -105,7 +109,11 @@ export type MapZone = {
   found: number;
   total: number;
 };
-export type ReportMap = { zones: MapZone[]; without_municipality: number };
+export type ReportMap = {
+  zones: MapZone[];
+  without_municipality: number;
+  municipalities?: { name: string; coordinates: [number, number] }[];
+};
 export type PushConfig = { enabled: boolean; public_key: string };
 export type ReviewMatch = {
   id: number;
@@ -129,6 +137,59 @@ export type Metrics = {
   claims_by_status: Record<string, number>;
   handovers_confirmed: number;
   matching_jobs_failed: number;
+  generated_at: string;
+  users_total: number;
+  users_verified: number;
+  users_new_30d: number;
+  reports_total: number;
+  reports_lost: number;
+  reports_found: number;
+  reports_new_7d: number;
+  reports_new_30d: number;
+  reports_by_category: Record<string, number>;
+  reports_by_municipality: Record<string, number>;
+  reports_by_week: { week: string; lost: number; found: number }[];
+  suggestions_total: number;
+  lost_with_suggestion: number;
+  lost_total: number;
+  returned_total: number;
+  median_days_to_return: number | null;
+  abuse_open: number;
+  feedback_open: number;
+  emails_pending: number;
+  emails_failed: number;
+};
+export type Photo = {
+  id: string;
+  url: string;
+  width: number;
+  height: number;
+  created_at: string;
+};
+export type AbuseReason = "false" | "offensive" | "personal" | "spam" | "other";
+export type AbuseCase = {
+  report_id: string;
+  folio: string;
+  kind: Kind;
+  category: string;
+  public_summary: string;
+  public_area: string;
+  description: string;
+  publication_status: string;
+  open_count: number;
+  reports: { reason: AbuseReason; reason_label: string; details: string; created_at: string }[];
+};
+export type FeedbackMood = "confused" | "broken" | "idea" | "praise";
+export type FeedbackItem = {
+  id: number;
+  mood: FeedbackMood;
+  mood_label: string;
+  message: string;
+  page: string;
+  device: string;
+  connection: string;
+  has_account: boolean;
+  created_at: string;
 };
 
 export class APIError extends Error {
@@ -137,6 +198,13 @@ export class APIError extends Error {
     public status: number,
   ) {
     super(message);
+  }
+}
+// Sin señal o el servidor no respondió: distinta de un error de validación,
+// porque en ese caso el reporte puede guardarse para enviarse después.
+export class NetworkError extends Error {
+  constructor() {
+    super("No pudimos conectar. Revisa tu conexión e inténtalo de nuevo.");
   }
 }
 function errorText(value: unknown): string {
@@ -151,14 +219,21 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   headers.set("Accept", "application/json");
   if (method !== "GET") {
-    const csrfResponse = await fetch("/api/auth/csrf/", {
-      credentials: "same-origin",
-    });
+    let csrfResponse: Response;
+    try {
+      csrfResponse = await fetch("/api/auth/csrf/", {
+        credentials: "same-origin",
+      });
+    } catch {
+      throw new NetworkError();
+    }
     if (!csrfResponse.ok)
       throw new Error("No se pudo preparar tu sesión. Intenta de nuevo.");
     const csrf = (await csrfResponse.json()) as { csrfToken: string };
     headers.set("X-CSRFToken", csrf.csrfToken);
-    headers.set("Content-Type", "application/json");
+    // Con FormData (fotos) el navegador pone el tipo y el separador.
+    if (!(options.body instanceof FormData))
+      headers.set("Content-Type", "application/json");
   }
   let response: Response;
   try {
@@ -170,10 +245,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       signal: options.signal ?? AbortSignal.timeout(20000),
     });
   } catch {
-    throw new Error(
-      "No pudimos conectar. Revisa tu conexión e inténtalo de nuevo.",
-    );
+    throw new NetworkError();
   }
+  if (response.status === 204) return null as T;
   const data: unknown = await response.json().catch(() => null);
   if (!response.ok)
     throw new APIError(
@@ -194,6 +268,39 @@ export const api = {
   authConfig: () => request<{ google_client_id: string }>("/api/auth/config/"),
   googleLogin: (credential: string) =>
     post<{ user: User }>("/api/auth/google/", { credential }),
+  passwordReset: (email: string) =>
+    post<{ ok: boolean }>("/api/auth/password-reset/", { email }),
+  passwordResetConfirm: (uid: string, token: string, password: string) =>
+    post<{ user: User }>("/api/auth/password-reset/confirm/", { uid, token, password }),
+  verifyEmail: (uid: string, token: string) =>
+    post<{ ok: boolean; already?: boolean }>("/api/auth/verify-email/", { uid, token }),
+  resendVerification: () =>
+    post<{ ok: boolean; already?: boolean }>("/api/auth/verify-email/resend/"),
+  setEmailNotifications: (email_notifications: boolean) =>
+    post<{ user: User }>("/api/auth/preferences/", { email_notifications }),
+  changePassword: (current: string, password: string) =>
+    post<{ user: User }>("/api/auth/password/", { current, password }),
+  photos: (reportId: string) => request<Photo[]>(`/api/reports/${reportId}/photos/`),
+  uploadPhoto: (reportId: string, file: Blob) => {
+    const body = new FormData();
+    body.append("photo", file, "foto.jpg");
+    return request<Photo>(`/api/reports/${reportId}/photos/`, {
+      method: "POST",
+      body,
+      signal: AbortSignal.timeout(90000),
+    });
+  },
+  deletePhoto: (id: string) =>
+    request<null>(`/api/photos/${id}/`, { method: "DELETE" }),
+  reportAbuse: (reportId: string, reason: AbuseReason, details: string) =>
+    post<{ ok: boolean; already?: boolean }>(`/api/public/reports/${reportId}/abuse/`, { reason, details }),
+  abuseQueue: () => request<AbuseCase[]>("/api/ops/abuse/"),
+  decideAbuse: (reportId: string, decision: "dismiss" | "hide", reason: string) =>
+    post(`/api/ops/abuse/${reportId}/decision/`, { decision, reason }),
+  sendFeedback: (mood: FeedbackMood, message: string, page: string, connection: string) =>
+    post("/api/feedback/", { mood, message, page, connection }),
+  feedbackQueue: () => request<FeedbackItem[]>("/api/ops/feedback/"),
+  resolveFeedback: (id: number) => post(`/api/ops/feedback/${id}/resolve/`),
   pushConfig: () => request<PushConfig>("/api/push/config/"),
   pushSubscriptionStatus: (endpoint: string) =>
     request<{ subscribed: boolean }>(`/api/push/subscriptions/?${new URLSearchParams({ endpoint })}`),

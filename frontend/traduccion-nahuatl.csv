@@ -1,0 +1,29 @@
+clave,espanol,nahuatl_zongolica,notas_para_quien_traduce
+nav.home,Inicio,,Botón del menú que lleva a la página principal
+nav.explore,Explorar avisos,,Ver los avisos de objetos perdidos y encontrados de la comunidad
+nav.how,Cómo funciona,,Enlace a la explicación de los tres pasos
+nav.login,Entrar,,Iniciar sesión en la cuenta
+nav.create,Crear reporte,,Botón para avisar que perdiste o encontraste algo
+nav.space,Mi espacio,,Donde la persona ve sus reportes y novedades
+bottom.explore,Explorar,,Botón corto de la barra inferior del celular (máximo 10 letras)
+bottom.report,Reportar,,Botón corto de la barra inferior del celular (máximo 10 letras)
+footer.tagline,Lo encontrado puede volver.,,Lema de LocalizaT
+footer.community,"Una comunidad, muchos caminos de regreso.",,Frase del pie de página
+footer.cta,Haz que algo vuelva,,Invitación a reportar
+home.eyebrow,OBJETOS PERDIDOS Y ENCONTRADOS,,Se muestra en mayúsculas
+home.title,Lo encontrado|puede|volver.,,"Título grande en tres renglones; separa los renglones con |"
+home.description,"Busca lo que perdiste o reporta lo que encontraste en la Sierra de Zongolica. Aquí puedes seguir tu caso y ayudar a que un objeto vuelva a su dueño.",,Texto debajo del título
+home.lost,Perdí algo,,Botón principal
+home.found,Encontré algo,,Botón principal
+home.browse,Primero quiero ver los objetos encontrados,,Enlace
+home.trust,Tú eliges si compartes un aviso. Tu correo y tu detalle secreto no se publican.,,Mensaje de confianza
+wizard.question,¿Qué te pasó?,,Primera pregunta al hacer un reporte
+wizard.lost,Perdí algo,,Opción
+wizard.lostHint,Lo estoy buscando.,,Aclaración de la opción
+wizard.found,Encontré algo,,Opción
+wizard.foundHint,Quiero devolverlo.,,Aclaración de la opción
+wizard.category,¿Qué tipo de objeto es?,,Pregunta antes de elegir la categoría
+wizard.next,Siguiente,,Botón para avanzar
+wizard.save,Guardar mi reporte,,Botón final
+feedback.open,¿Algo no se entendió?,,Botón para dejar un comentario al equipo
+language.label,Idioma,,Selector de idioma

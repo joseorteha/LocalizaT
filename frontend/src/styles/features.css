@@ -1,0 +1,320 @@
+/* ==========================================================================
+   Cuenta, fotos privadas, denuncias, comentarios, envío sin señal y resumen
+   del equipo. Usa los mismos tokens que el resto de la interfaz.
+   ========================================================================== */
+
+/* ---------- Cuenta ---------- */
+.forgot-link {
+  justify-self: start;
+  margin-top: 2px;
+  font-size: var(--fs-sm);
+}
+.reset-sent {
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: var(--r-md);
+  background: var(--ok-bg);
+  color: var(--ok);
+  line-height: 1.6;
+}
+.narrow-page {
+  max-width: 560px;
+}
+.account-form {
+  margin-top: 8px;
+}
+.verify-banner svg {
+  flex-shrink: 0;
+  color: var(--brand-text);
+}
+
+/* ---------- Fotos privadas ---------- */
+.photo-field {
+  display: grid;
+  gap: 8px;
+}
+.photo-field-label {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ink);
+}
+.photo-field-label small {
+  font-weight: 500;
+  color: var(--muted);
+}
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 10px;
+  max-width: 420px;
+}
+.photo-grid figure {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.photo-grid img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.photo-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 32px;
+  height: 32px;
+  background: rgb(6 37 43 / 0.72);
+  color: #fff;
+}
+.photo-remove:hover {
+  background: var(--danger);
+  color: #fff;
+}
+.photo-add {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  aspect-ratio: 1;
+  border: 2px dashed var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--brand-text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+.photo-add:hover:not(:disabled) {
+  border-color: var(--lime-500);
+  background: var(--lime-100);
+}
+.photo-add:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+.compare-photos {
+  display: grid;
+  gap: 14px;
+}
+
+/* ---------- Envío sin señal ---------- */
+.offline-offer {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 18px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--wait);
+  background: var(--wait-bg);
+  color: var(--ink);
+}
+.offline-offer > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--wait);
+}
+.offline-offer p {
+  margin: 4px 0 12px;
+  line-height: 1.6;
+}
+.offline-offer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ---------- Denunciar un aviso ---------- */
+.abuse-link {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.abuse-link:hover:not(:disabled) {
+  color: var(--danger);
+}
+.abuse-link:disabled {
+  cursor: default;
+  opacity: 0.8;
+}
+.abuse-reasons {
+  display: grid;
+  gap: 8px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.abuse-reasons li {
+  line-height: 1.5;
+}
+.abuse-reasons svg {
+  vertical-align: -2px;
+  color: var(--danger);
+}
+.abuse-reasons small {
+  color: var(--muted);
+}
+
+/* ---------- «¿Algo no se entendió?» ---------- */
+.footer-feedback,
+.footer-language {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.footer-feedback:hover,
+.footer-language:hover {
+  color: var(--lime-300);
+}
+.feedback-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 20px;
+  z-index: calc(var(--z-nav) - 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--glass-strong);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--brand-text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  box-shadow: var(--sh-2);
+  cursor: pointer;
+}
+.feedback-fab:hover {
+  border-color: var(--lime-500);
+}
+@media (max-width: 899px) {
+  /* En el celular solo el ícono, encima de la barra inferior. */
+  .feedback-fab {
+    right: 14px;
+    bottom: calc(var(--bottom-nav-space) + 10px);
+    width: 44px;
+    height: 44px;
+    justify-content: center;
+    padding: 0;
+  }
+  .feedback-fab span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+}
+.feedback-message {
+  margin: 6px 0 4px;
+  color: var(--ink);
+  line-height: 1.55;
+}
+.feedback-device {
+  display: block;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Resumen del equipo ---------- */
+.summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.metric-tile {
+  display: grid;
+  gap: 4px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--sh-1);
+}
+.metric-tile strong {
+  font-size: var(--fs-2xl);
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--brand-text);
+}
+.metric-tile span {
+  font-weight: 700;
+  color: var(--ink);
+}
+.metric-tile small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+.metric-alert {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+}
+.metric-alert strong {
+  color: var(--danger);
+}
+.metric-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 22px;
+  margin-bottom: 18px;
+}
+.metric-columns h3 {
+  margin: 0 0 12px;
+  font-size: var(--fs-md);
+}
+.metric-bars {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.metric-bars li {
+  display: grid;
+  grid-template-columns: minmax(90px, 40%) 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-sm);
+}
+.metric-bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+.metric-bar-track {
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.metric-bar-track span {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--petrol-700), var(--lime-500));
+}
