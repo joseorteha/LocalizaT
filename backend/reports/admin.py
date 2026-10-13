@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Report
+from .models import AbuseReport, Report
 
 
 @admin.register(Report)
@@ -17,4 +17,18 @@ class ReportAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(AbuseReport)
+class AbuseReportAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "report", "reason", "status", "resolved_by")
+    list_filter = ("reason", "status")
+    readonly_fields = ("report", "reporter", "fingerprint", "reason", "details", "status", "created_at", "resolved_at", "resolved_by")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        # Se decide desde el panel del equipo, que avisa a la persona dueña.
         return False
