@@ -8,8 +8,11 @@ import { Publications } from "./Publications";
 import { Matches } from "./Matches";
 import { ClaimsReview } from "./ClaimsReview";
 import { Custody } from "./Custody";
+import { AbuseReview } from "./AbuseReview";
+import { FeedbackReview } from "./FeedbackReview";
+import { Summary } from "./Summary";
 
-type Section = "publications" | "matches" | "claims" | "custody";
+type Section = "publications" | "matches" | "claims" | "custody" | "abuse" | "feedback" | "summary";
 
 export function Operations() {
   const { user } = useApp();
@@ -26,13 +29,19 @@ export function Operations() {
       : null,
     matches: metrics.data?.suggestions_pending ?? null,
     custody: null,
+    abuse: metrics.data?.abuse_open ?? null,
+    feedback: metrics.data?.feedback_open ?? null,
+    summary: null,
   };
   const tabs: [Section, string, string][] = user?.is_staff
     ? [
         ["publications", "Avisos por revisar", "Aprobar o pedir cambios"],
         ["claims", "Reclamaciones", "Comprobar quién es dueño"],
         ["matches", "Coincidencias", "Pares que sugirió el sistema"],
+        ["abuse", "Denuncias", "Avisos que la gente reportó"],
         ["custody", "Custodia", "Objetos en los puntos"],
+        ["feedback", "Comentarios", "Lo que la gente nos dice"],
+        ["summary", "Resumen", "Cifras del servicio"],
       ]
     : [["custody", "Custodia", "Objetos en tu punto"]];
   // Sin elección, abre la primera sección con trabajo pendiente.
@@ -89,6 +98,12 @@ export function Operations() {
         <Matches />
       ) : section === "claims" ? (
         <ClaimsReview />
+      ) : section === "abuse" ? (
+        <AbuseReview />
+      ) : section === "feedback" ? (
+        <FeedbackReview />
+      ) : section === "summary" ? (
+        <Summary metrics={metrics.data} error={metrics.error} reload={metrics.reload} />
       ) : (
         <Custody />
       )}
