@@ -25,7 +25,7 @@ La configuración de Compose está pensada para **desarrollo local**. Usa el ser
 ## Comprobar el código
 
 ```powershell
-docker compose exec api python manage.py test accounts reports matching claims custody notifications audit
+docker compose exec api python manage.py test
 cd frontend
 npm ci
 npm test
@@ -43,6 +43,13 @@ npm run build
 | `frontend/src/pages/` | Inicio, exploración, reportes, espacio personal y operación. |
 | `frontend/src/components/`, `frontend/public/` | Componentes y recursos visuales de la aplicación. |
 
-Los avisos push se activan voluntariamente y se envían ante posibles coincidencias. Las ubicaciones públicas son aproximadas para proteger a las personas. La recuperación de cuentas, las fotos privadas y la validación de uso en dispositivos de la Sierra siguen pendientes.
+| `deploy/` | Scripts de respaldo y restauración de producción. |
+| `docs/` | Documentación del proyecto (ver abajo). |
 
-Este repositorio contiene solo el código y los archivos necesarios para ejecutarlo. Los documentos de investigación, datos de encuesta y entregables de la convocatoria se conservan fuera del repositorio.
+Las personas reciben avisos en la app, por push (si lo activan) y por correo (si confirmaron su correo). Las ubicaciones públicas son aproximadas para proteger a las personas. Las fotos de los objetos son privadas y pierden su ubicación GPS al subirse. Falta validar el uso en dispositivos de la Sierra con personas reales.
+
+## Documentación
+
+Empieza por [**cómo funciona el sistema completo**](docs/04_ingenieria/11_SISTEMA_COMPLETO_LocalizaT.md), con diagramas de casos de uso, secuencias, estados y despliegue. El [índice de `docs/`](docs/README.md) reúne el problema, la investigación, la operación, la ingeniería y el diseño. Para publicar el servicio, sigue [`DESPLIEGUE.md`](DESPLIEGUE.md).
+
+Los datos crudos de la encuesta, la planeación interna y los materiales de la convocatoria se conservan fuera del repositorio.
