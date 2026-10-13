@@ -34,6 +34,9 @@ import {
 } from "lucide-react";
 import { api, type User } from "./api";
 import { GoogleButton } from "./GoogleButton";
+import { FeedbackButton } from "./components/FeedbackButton";
+import { nahuatlReady, useLanguage, useT } from "./i18n";
+import { flushReports } from "./outbox";
 import { Privacy } from "./pages/Privacy";
 import { Terms } from "./pages/Terms";
 import { SessionContext, useApp } from "./context";
@@ -67,6 +70,16 @@ const OwnReportDetail = lazy(() =>
 const ReportWizard = lazy(() =>
   import("./pages/ReportWizard").then((module) => ({
     default: module.ReportWizard,
+  })),
+);
+const ResetPassword = lazy(() =>
+  import("./pages/Account").then((module) => ({
+    default: module.ResetPassword,
+  })),
+);
+const VerifyEmail = lazy(() =>
+  import("./pages/Account").then((module) => ({
+    default: module.VerifyEmail,
   })),
 );
 const Operations = lazy(() =>
@@ -131,26 +144,38 @@ function Protected({
   return children;
 }
 
+type AuthMode = "login" | "signup" | "reset";
+
 function AuthDialog({
   mode,
   setMode,
   onClose,
   onSuccess,
 }: {
-  mode: "login" | "signup" | null;
-  setMode: (mode: "login" | "signup") => void;
+  mode: AuthMode | null;
+  setMode: (mode: AuthMode) => void;
   onClose: () => void;
   onSuccess: (user: User, mode: "login" | "signup") => void;
 }) {
   const { busy, error, setError, run } = useAction();
   const [visible, setVisible] = useState(false);
+  const [resetSent, setResetSent] = useState("");
   useEffect(() => {
     setError("");
     setVisible(false);
+    setResetSent("");
   }, [mode, setError]);
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    if (mode === "reset") {
+      const email = String(data.get("email")).trim();
+      run(async () => {
+        await api.passwordReset(email);
+        setResetSent(email);
+      });
+      return;
+    }
     const password = String(data.get("password"));
     if (mode === "signup" && password !== String(data.get("confirmation"))) {
       setError("Las contraseñas deben coincidir.");
@@ -170,6 +195,52 @@ function AuthDialog({
       }),
     [run, onSuccess, mode],
   );
+  if (mode === "reset")
+    return (
+      <Modal
+        open
+        onOpenChange={(open) => {
+          if (!open && !busy) onClose();
+        }}
+        title="Recupera tu cuenta"
+        description="Escribe el correo de tu cuenta y te mandamos un enlace para elegir una contraseña nueva."
+      >
+        <div className="auth-mark">
+          <img src="/isotipo.svg" alt="" />
+        </div>
+        {resetSent ? (
+          <div className="form-stack">
+            <p className="reset-sent" role="status">
+              Si hay una cuenta con <strong>{resetSent}</strong>, en unos minutos
+              te llegará un correo con el enlace. Revisa también la carpeta de
+              spam. El enlace sirve durante 2 horas.
+            </p>
+            <Button variant="secondary" onClick={() => setMode("login")}>
+              Volver a entrar
+            </Button>
+          </div>
+        ) : (
+          <form className="form-stack" onSubmit={submit} key="reset">
+            <label>
+              Correo electrónico
+              <input name="email" type="email" autoFocus autoComplete="email" placeholder="tu@correo.com" required maxLength={254} />
+            </label>
+            {error && <ErrorBox message={error} />}
+            <Button type="submit" busy={busy}>
+              Enviarme el enlace <ArrowRight size={17} />
+            </Button>
+            <p className="hint">
+              ¿Entraste con Google? No necesitas contraseña: usa «Continuar con Google».
+            </p>
+          </form>
+        )}
+        <p className="auth-switch">
+          <button type="button" onClick={() => setMode("login")}>
+            Ya la recordé, quiero entrar
+          </button>
+        </p>
+      </Modal>
+    );
   return (
     <Modal
       open={mode !== null}
@@ -226,6 +297,11 @@ function AuthDialog({
               otro lugar.
             </small>
           )}
+          {mode === "login" && (
+            <button type="button" className="text-link forgot-link" onClick={() => setMode("reset")}>
+              ¿Olvidaste tu contraseña?
+            </button>
+          )}
         </label>
         {mode === "signup" && (
           <label>
@@ -262,7 +338,7 @@ function AuthDialog({
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
-  const [authMode, setAuthMode] = useState<"login" | "signup" | null>(null);
+  const [authMode, setAuthMode] = useState<AuthMode | null>(null);
   const [authNext, setAuthNext] = useState("/mi-espacio");
   const [notice, setNotice] = useState("");
   const [noticeKind, setNoticeKind] = useState<"success" | "error">("success");
@@ -274,6 +350,8 @@ export default function App() {
   const reduced = usePrefersReducedMotion();
   const online = useOnline();
   const { theme, toggle: toggleTheme } = useTheme();
+  const t = useT();
+  const { lang, setLang } = useLanguage();
   const themeLabel = theme === "dark" ? "Usar modo claro" : "Usar modo oscuro";
   const toast = (message: string, kind: "success" | "error" = "success") => {
     setNoticeKind(kind);
@@ -318,6 +396,26 @@ export default function App() {
     };
   }, [user, location.pathname, unreadVersion]);
   useEffect(() => {
+    // Reportes guardados sin señal: se envían solos al volver la conexión
+    // (y al abrir la app), siempre que haya una sesión abierta.
+    if (!user || !online) return;
+    let active = true;
+    flushReports().then(({ sent, rejected }) => {
+      if (!active) return;
+      if (sent.length)
+        toast(
+          sent.length === 1
+            ? `Volvió la señal: enviamos tu reporte ${sent[0].folio}.`
+            : `Volvió la señal: enviamos ${sent.length} reportes que tenías pendientes.`,
+        );
+      if (rejected.length)
+        toast(`No pudimos enviar un reporte guardado: ${rejected[0]} Vuelve a hacerlo, por favor.`, "error");
+    });
+    return () => {
+      active = false;
+    };
+  }, [user, online]);
+  useEffect(() => {
     // Las confirmaciones se van solas; los errores se quedan hasta cerrarlos,
     // para que nadie se pierda un problema por leer despacio.
     if (!notice || noticeKind === "error") return;
@@ -333,6 +431,8 @@ export default function App() {
       "/mi-espacio": "Mi espacio",
       "/reportar": "Nuevo reporte",
       "/operacion": "Panel del equipo",
+      "/restablecer": "Cambiar contraseña",
+      "/verificar": "Confirmar correo",
     };
     const title =
       titles[location.pathname] ??
@@ -370,6 +470,7 @@ export default function App() {
         toast,
         unread,
         refreshUnread: () => setUnreadVersion((value) => value + 1),
+        updateUser: setUser,
       }}
     >
       <a className="skip-link" href="#main">
@@ -380,7 +481,8 @@ export default function App() {
           <WifiOff size={18} />
           <span>
             Sin conexión. Lo que escribas en un reporte se guarda en este
-            celular; envíalo cuando vuelva la señal.
+            celular y puedes dejarlo listo para que se envíe solo cuando
+            vuelva la señal.
           </span>
         </div>
       )}
@@ -393,9 +495,9 @@ export default function App() {
           </Link>
           <nav className="desktop-nav" aria-label="Navegación principal">
             <NavLink to="/" end viewTransition>
-              Inicio
+              {t("nav.home")}
             </NavLink>
-            <NavLink to="/explorar" viewTransition>Explorar avisos</NavLink>
+            <NavLink to="/explorar" viewTransition>{t("nav.explore")}</NavLink>
             <Link
               to="/#como-funciona"
               onClick={(event) => {
@@ -407,7 +509,7 @@ export default function App() {
                 }
               }}
             >
-              Cómo funciona
+              {t("nav.how")}
             </Link>
           </nav>
           <div className="header-actions">
@@ -438,7 +540,7 @@ export default function App() {
                 </Link>
                 <Link to="/mi-espacio" className="account-button">
                   <span className="avatar">{user.email[0].toUpperCase()}</span>
-                  <span>Mi espacio</span>
+                  <span>{t("nav.space")}</span>
                 </Link>
                 <button
                   className="icon-button logout-nav"
@@ -450,12 +552,12 @@ export default function App() {
               </>
             ) : (
               <button className="login-link" onClick={() => openAuth()}>
-                Entrar <ArrowRight size={16} />
+                {t("nav.login")} <ArrowRight size={16} />
               </button>
             )}
             <Link to="/reportar" className="btn btn-primary header-report">
               <Plus size={17} />
-              Crear reporte
+              {t("nav.create")}
             </Link>
             <button
               className="icon-button mobile-menu-toggle"
@@ -469,9 +571,9 @@ export default function App() {
         </div>
         {menuOpen && (
           <nav className="mobile-menu" aria-label="Navegación móvil">
-            <Link to="/">Inicio</Link>
-            <Link to="/explorar">Explorar avisos</Link>
-            <Link to="/mi-espacio">Mi espacio</Link>
+            <Link to="/">{t("nav.home")}</Link>
+            <Link to="/explorar">{t("nav.explore")}</Link>
+            <Link to="/mi-espacio">{t("nav.space")}</Link>
             {user && (user.is_staff || user.is_point_member) && (
               <Link to="/operacion">Panel del equipo</Link>
             )}
@@ -506,6 +608,8 @@ export default function App() {
             <Route path="/reportar" element={<ReportWizard />} />
             <Route path="/privacidad" element={<Privacy />} />
             <Route path="/terminos" element={<Terms />} />
+            <Route path="/restablecer" element={<ResetPassword />} />
+            <Route path="/verificar" element={<VerifyEmail />} />
             <Route
               path="/mis-reportes/:id"
               element={
@@ -546,12 +650,12 @@ export default function App() {
             <img src="/localizat-logo-claro.svg" alt="LocalizaT" />
           </Link>
           <p>
-            Lo encontrado puede volver.
+            {t("footer.tagline")}
             <br />
-            <span>Una comunidad, muchos caminos de regreso.</span>
+            <span>{t("footer.community")}</span>
           </p>
           <Link to="/reportar" className="footer-cta">
-            Haz que algo vuelva <ArrowRight size={22} />
+            {t("footer.cta")} <ArrowRight size={22} />
           </Link>
         </div>
         <div className="footer-bottom">
@@ -564,6 +668,17 @@ export default function App() {
             {user && (user.is_staff || user.is_point_member) && (
               <Link to="/operacion">Panel del equipo</Link>
             )}
+            <FeedbackButton />
+            {nahuatlReady && (
+              <button
+                type="button"
+                className="footer-language"
+                onClick={() => setLang(lang === "es" ? "nah" : "es")}
+                aria-label={t("language.label")}
+              >
+                {lang === "es" ? "Nāhuatl" : "Español"}
+              </button>
+            )}
           </div>
           <span>Hecho para la Sierra de Zongolica.</span>
         </div>
@@ -571,17 +686,18 @@ export default function App() {
       <nav className="bottom-nav" aria-label="Accesos rápidos">
         <NavLink to="/explorar" viewTransition>
           <Compass size={20} />
-          Explorar
+          {t("bottom.explore")}
         </NavLink>
         <NavLink to="/reportar" className="bottom-create" viewTransition>
           <Plus size={23} />
-          Reportar
+          {t("bottom.report")}
         </NavLink>
         <NavLink to="/mi-espacio" viewTransition>
           <UserRound size={20} />
-          Mi espacio
+          {t("nav.space")}
         </NavLink>
       </nav>
+      {location.pathname !== "/reportar" && <FeedbackButton floating />}
       <AuthDialog
         mode={authMode}
         setMode={setAuthMode}
@@ -592,7 +708,9 @@ export default function App() {
           navigate(authNext);
           toast(
             mode === "signup"
-              ? "Tu cuenta está lista."
+              ? signedIn.email_verified
+                ? "Tu cuenta está lista."
+                : "Tu cuenta está lista. Te mandamos un correo para confirmar tu dirección."
               : "Hola de nuevo. Entraste a tu cuenta.",
           );
         }}
