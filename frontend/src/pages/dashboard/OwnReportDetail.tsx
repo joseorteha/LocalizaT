@@ -26,6 +26,7 @@ import {
   Tag,
 } from "../../components/ui";
 import { PublishDialog } from "../../components/PublishDialog";
+import { PrivatePhotos } from "../../components/PrivatePhotos";
 import { ClaimDialog } from "./ClaimDialog";
 
 export function OwnReportDetail() {
@@ -267,6 +268,7 @@ export function OwnReportDetail() {
           Solo tú y el equipo ven esta información.
           {lost && " Tu detalle secreto nunca se publica."}
         </p>
+        <PrivatePhotos reportId={report.id} editable={report.status === "active" || report.status === "reserved"} />
         {active && report.publication_status === "public" && (
           <div className="public-version">
             <p className="tiny-label">LO QUE VE LA COMUNIDAD</p>
