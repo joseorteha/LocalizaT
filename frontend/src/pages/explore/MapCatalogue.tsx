@@ -14,13 +14,16 @@ maplibregl.setWorkerUrl(mapWorkerUrl);
 // Mapa base de CARTO. La clave va en cada mosaico que pide el navegador (no es
 // secreta); conviene limitarla al dominio de LocalizaT en el panel de CARTO.
 const CARTO_KEY = (import.meta.env.VITE_CARTO_KEY as string | undefined) || "cb1_4inn_1_702e23b375ac1a1ab43bfa92";
-const carto = (style: string) => [`https://basemaps.cartocdn.com/rastertiles/${style}/{z}/{x}/{y}@2x.png?key=${CARTO_KEY}`];
-// Relieve real (Terrain Tiles de Mapzen en AWS Open Data): las montañas de la Sierra.
+// Con datos lentos o «ahorro de datos» se piden mosaicos normales (4 veces más ligeros que los de alta resolución).
+const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+const LIGHT_TILES = Boolean(connection?.saveData) || /(^|-)2g|3g/.test(connection?.effectiveType ?? "");
+const carto = (style: string) => [
+  `https://basemaps.cartocdn.com/rastertiles/${style}/{z}/{x}/{y}${LIGHT_TILES ? "" : "@2x"}.png?key=${CARTO_KEY}`,
+];
+// Relieve real (Terrain Tiles de Mapzen en AWS Open Data). Solo se descarga en la vista 3D.
 const DEM_TILES = ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"];
 
 type Theme = "light" | "dark";
-// El relieve se pinta entre el mapa sin nombres y una capa solo con nombres,
-// para que la sombra de las montañas no tape las etiquetas.
 const LOOK: Record<Theme, {
   base: string;
   labels: string;
@@ -64,13 +67,16 @@ const LOOK: Record<Theme, {
 };
 const currentTheme = (): Theme => (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
 
-const SIERRA: maplibregl.LngLatBoundsLike = [[-97.17, 18.5], [-96.97, 18.78]];
+const SIERRA: maplibregl.LngLatBoundsLike = [[-97.17, 18.49], [-96.97, 18.78]];
+// Margen del encuadre: arriba la barra de vista, abajo la etiqueta del círculo más al sur.
+const PADDING = { top: 64, bottom: 76, left: 28, right: 28 };
 const PITCH_3D = 58;
 const BEARING_3D = -18;
 const EXAGGERATION = 1.6;
-// Los municipios están cerca entre sí: la cámara se acerca un poco más que el
-// encuadre de la región para que los círculos no se encimen.
-const ZOOM_BOOST = { flat: 0.35, relief: 0.75 };
+const ZOOM_BOOST = { flat: 0.25, relief: 0.75 };
+// Distancia mínima en pantalla entre dos círculos (con su etiqueta); más cerca, se agrupan.
+const CLUSTER_PX = 72;
+const TOWN_PX = 52;
 
 const SPANISH: Record<string, string> = {
   "NavigationControl.ZoomIn": "Acercar",
@@ -93,10 +99,10 @@ function zoneLink(zone: MapZone, filters: Record<string, string>) {
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 const zoneSummary = (zone: MapZone) =>
   `${plural(zone.total, "aviso", "avisos")} · ${plural(zone.lost, "se busca", "se buscan")} · ${plural(zone.found, "encontrado", "encontrados")}`;
+const foundShare = (found: number, total: number) => `${Math.round((found / Math.max(1, total)) * 100)}%`;
 
-// Cámara que encuadra la Sierra, plana o inclinada.
 function sierraCamera(instance: maplibregl.Map, relief: boolean): maplibregl.CameraOptions {
-  const camera = instance.cameraForBounds(SIERRA, { padding: 40, bearing: relief ? BEARING_3D : 0 }) ?? {};
+  const camera = instance.cameraForBounds(SIERRA, { padding: PADDING, bearing: relief ? BEARING_3D : 0 }) ?? {};
   return {
     ...camera,
     zoom: (camera.zoom ?? 10) + (relief ? ZOOM_BOOST.relief : ZOOM_BOOST.flat),
@@ -105,19 +111,69 @@ function sierraCamera(instance: maplibregl.Map, relief: boolean): maplibregl.Cam
   };
 }
 
+// Agrupa los municipios que quedan demasiado cerca en la pantalla actual.
+type Group = { zones: MapZone[]; lngLat: [number, number]; point: maplibregl.Point };
+function groupZones(instance: maplibregl.Map, zones: MapZone[]): Group[] {
+  const groups: Group[] = [];
+  for (const zone of [...zones].sort((a, b) => b.total - a.total)) {
+    const point = instance.project(zone.coordinates);
+    const near = groups.find((group) => group.point.dist(point) < CLUSTER_PX);
+    if (near) {
+      near.zones.push(zone);
+      const weight = near.zones.reduce((sum, item) => sum + item.total, 0);
+      near.lngLat = [
+        near.zones.reduce((sum, item) => sum + item.coordinates[0] * item.total, 0) / weight,
+        near.zones.reduce((sum, item) => sum + item.coordinates[1] * item.total, 0) / weight,
+      ];
+      near.point = instance.project(near.lngLat);
+    } else {
+      groups.push({ zones: [zone], lngLat: zone.coordinates, point });
+    }
+  }
+  return groups;
+}
+
+function zonePopup(zone: MapZone, filters: Record<string, string>) {
+  const popup = document.createElement("div");
+  popup.className = "map-popup";
+  const title = document.createElement("strong");
+  title.textContent = zone.name;
+  const stats = document.createElement("div");
+  stats.className = "map-popup-stats";
+  for (const [value, label, kind] of [
+    [zone.lost, zone.lost === 1 ? "se busca" : "se buscan", "lost"],
+    [zone.found, zone.found === 1 ? "encontrado" : "encontrados", "found"],
+  ] as const) {
+    const stat = document.createElement("span");
+    stat.className = `map-popup-stat is-${kind}`;
+    const number = document.createElement("b");
+    number.textContent = String(value);
+    stat.append(number, ` ${label}`);
+    stats.append(stat);
+  }
+  const link = document.createElement("a");
+  link.href = zoneLink(zone, filters);
+  link.className = "map-popup-link";
+  link.textContent = `Ver los avisos de ${zone.name} →`;
+  const note = document.createElement("small");
+  note.textContent = "El círculo marca la cabecera municipal, no dónde está el objeto.";
+  popup.append(title, stats, link, note);
+  return popup;
+}
+
 export function MapCatalogue({ filters }: { filters: Record<string, string> }) {
   const key = new URLSearchParams(filters).toString();
   const load = useLoad(() => api.reportMap(filters), key);
   const reduced = usePrefersReducedMotion();
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
-  const markers = useRef<Map<string, Marker>>(new Map());
-  const towns = useRef<Marker[]>([]);
+  const markers = useRef<Marker[]>([]);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState(false);
-  // En computadora abre en 3D; en el celular, plano (menos datos y batería).
-  const [relief, setRelief] = useState(() => window.matchMedia("(min-width: 900px)").matches);
+  // Plano y ligero por defecto; el relieve 3D es opcional.
+  const [relief, setRelief] = useState(false);
   const [active, setActive] = useState<string | null>(null);
+  const [view, setView] = useState(0); // cambia al mover o acercar: vuelve a agrupar
 
   useEffect(() => {
     if (!container.current) {
@@ -130,13 +186,16 @@ export function MapCatalogue({ filters }: { filters: Record<string, string> }) {
       instance = new maplibregl.Map({
         container: container.current,
         bounds: SIERRA,
-        fitBoundsOptions: { padding: 40 },
+        fitBoundsOptions: { padding: PADDING },
         minZoom: 8,
         maxZoom: 14,
         maxPitch: 70,
         maxBounds: [[-97.7, 18.1], [-96.4, 19.2]],
         cooperativeGestures: true,
         attributionControl: false,
+        dragRotate: false,
+        pitchWithRotate: false,
+        touchPitch: false,
         locale: SPANISH,
         style: {
           version: 8,
@@ -153,6 +212,8 @@ export function MapCatalogue({ filters }: { filters: Record<string, string> }) {
               id: "relief",
               type: "hillshade",
               source: "hills",
+              // Oculto en la vista plana: así no se descarga el relieve.
+              layout: { visibility: "none" },
               paint: {
                 "hillshade-exaggeration": 0.55,
                 "hillshade-shadow-color": look.shadow,
@@ -161,7 +222,7 @@ export function MapCatalogue({ filters }: { filters: Record<string, string> }) {
                 "hillshade-illumination-direction": 315,
               },
             },
-            { id: "labels", type: "raster", source: "labels", paint: { "raster-opacity": 0.92 } },
+            { id: "labels", type: "raster", source: "labels", paint: { "raster-opacity": 0.95 } },
           ],
         },
       });
@@ -169,10 +230,11 @@ export function MapCatalogue({ filters }: { filters: Record<string, string> }) {
       setMapError(true);
       return;
     }
-    instance.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+    instance.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     instance.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
     // Un mosaico que no llega no rompe el mapa (se reintenta al moverse); se avisa en la consola.
     instance.on("error", (event) => console.warn("Mapa:", event.error?.message ?? event));
+    instance.on("moveend", () => setView((value) => value + 1));
     // Listo en cuanto el estilo está armado: no hace falta esperar a que bajen los mosaicos.
     if (instance.isStyleLoaded()) setMapReady(true);
     else instance.once("style.load", () => setMapReady(true));
@@ -196,120 +258,117 @@ export function MapCatalogue({ filters }: { filters: Record<string, string> }) {
     return () => {
       themeObserver.disconnect();
       markers.current.forEach((marker) => marker.remove());
-      markers.current.clear();
-      towns.current.forEach((marker) => marker.remove());
-      towns.current = [];
+      markers.current = [];
       instance.remove();
       map.current = null;
     };
   }, []);
 
-  // Relieve 3D: el terreno se levanta y la cámara se inclina sobre la Sierra.
+  // Vista plana ↔ relieve 3D.
   useEffect(() => {
     const instance = map.current;
     if (!instance || !mapReady) return;
     instance.setTerrain(relief ? { source: "dem", exaggeration: EXAGGERATION } : null);
+    instance.setLayoutProperty("relief", "visibility", relief ? "visible" : "none");
     // Sobre el relieve los nombres del mapa base se estiran; ahí bastan nuestras etiquetas.
     instance.setLayoutProperty("labels", "visibility", relief ? "none" : "visible");
-    instance.easeTo({ ...sierraCamera(instance, relief), duration: reduced ? 0 : 2200, essential: false });
+    if (relief) {
+      instance.dragRotate.enable();
+      instance.touchPitch.enable();
+    } else {
+      instance.dragRotate.disable();
+      instance.touchPitch.disable();
+    }
+    instance.easeTo({ ...sierraCamera(instance, relief), duration: reduced ? 0 : 1400, essential: false });
   }, [relief, mapReady, reduced]);
 
-  // Cabeceras sin avisos: puntos pequeños que dan contexto de la región.
-  useEffect(() => {
-    towns.current.forEach((marker) => marker.remove());
-    towns.current = [];
-    const instance = map.current;
-    if (!instance || !mapReady || !load.data) return;
-    const withNotices = new Set(load.data.zones.map((zone) => zone.name));
-    for (const town of load.data.municipalities ?? []) {
-      if (withNotices.has(town.name)) continue;
-      const element = document.createElement("div");
-      element.className = "map-town";
-      element.setAttribute("aria-hidden", "true");
-      const label = document.createElement("span");
-      label.textContent = town.name;
-      element.append(label);
-      towns.current.push(
-        new maplibregl.Marker({ element, anchor: "top", opacityWhenCovered: "0.85" }).setLngLat(town.coordinates).addTo(instance),
-      );
-    }
-  }, [load.data, mapReady]);
-
-  // Municipios con avisos: el anillo muestra cuántos se buscan y cuántos se encontraron.
+  // Círculos: se dibujan otra vez al mover o acercar, agrupando los que se encimarían.
   useEffect(() => {
     markers.current.forEach((marker) => marker.remove());
-    markers.current.clear();
+    markers.current = [];
     const instance = map.current;
     if (!instance || !mapReady || !load.data) return;
-    const most = Math.max(1, ...load.data.zones.map((zone) => zone.total));
-    for (const zone of load.data.zones) {
+    const groups = groupZones(instance, load.data.zones);
+    const most = Math.max(1, ...groups.map((group) => group.zones.reduce((sum, zone) => sum + zone.total, 0)));
+
+    for (const group of groups) {
+      const total = group.zones.reduce((sum, zone) => sum + zone.total, 0);
+      const found = group.zones.reduce((sum, zone) => sum + zone.found, 0);
+      const size = 36 + Math.round(18 * Math.sqrt(total / most));
       // MapLibre mueve el contenedor; el botón de adentro puede crecer al pasar el cursor.
       const element = document.createElement("div");
       element.className = "map-zone-pin";
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "map-zone-marker";
-      const size = 38 + Math.round(20 * Math.sqrt(zone.total / most));
+      button.className = `map-zone-marker${group.zones.length > 1 ? " is-group" : ""}`;
       button.style.setProperty("--size", `${size}px`);
-      button.style.setProperty("--found", `${Math.round((zone.found / zone.total) * 100)}%`);
-      button.setAttribute("aria-label", `${zone.name}: ${zoneSummary(zone)}`);
+      button.style.setProperty("--found", foundShare(found, total));
       const count = document.createElement("span");
       count.className = "map-zone-count";
-      count.textContent = String(zone.total);
+      count.textContent = String(total);
       const name = document.createElement("span");
       name.className = "map-zone-name";
-      name.textContent = zone.name;
       button.append(count, name);
       element.append(button);
-
-      const popup = document.createElement("div");
-      popup.className = "map-popup";
-      const title = document.createElement("strong");
-      title.textContent = zone.name;
-      const stats = document.createElement("div");
-      stats.className = "map-popup-stats";
-      for (const [value, label, kind] of [
-        [zone.lost, zone.lost === 1 ? "se busca" : "se buscan", "lost"],
-        [zone.found, zone.found === 1 ? "encontrado" : "encontrados", "found"],
-      ] as const) {
-        const stat = document.createElement("span");
-        stat.className = `map-popup-stat is-${kind}`;
-        const number = document.createElement("b");
-        number.textContent = String(value);
-        stat.append(number, ` ${label}`);
-        stats.append(stat);
-      }
-      const link = document.createElement("a");
-      link.href = zoneLink(zone, filters);
-      link.className = "map-popup-link";
-      link.textContent = `Ver los avisos de ${zone.name} →`;
-      const note = document.createElement("small");
-      note.textContent = "El círculo marca la cabecera municipal, no dónde está el objeto.";
-      popup.append(title, stats, link, note);
-
       // Aunque una montaña lo tape, el círculo se sigue viendo.
-      const marker = new maplibregl.Marker({ element, opacityWhenCovered: "0.9" })
-        .setLngLat(zone.coordinates)
-        .setPopup(new maplibregl.Popup({ offset: size / 2 + 6, maxWidth: "280px", className: "map-popup-shell" }).setDOMContent(popup))
-        .addTo(instance);
-      element.addEventListener("click", () => {
-        instance.easeTo({ center: zone.coordinates, zoom: Math.max(instance.getZoom(), 11), duration: reduced ? 0 : 900 });
-      });
-      markers.current.set(zone.name, marker);
+      const marker = new maplibregl.Marker({ element, opacityWhenCovered: "0.9" }).setLngLat(group.lngLat);
+
+      if (group.zones.length === 1) {
+        const zone = group.zones[0];
+        name.textContent = zone.name;
+        button.dataset.zone = zone.name;
+        button.setAttribute("aria-label", `${zone.name}: ${zoneSummary(zone)}`);
+        marker.setPopup(
+          new maplibregl.Popup({ offset: size / 2 + 6, maxWidth: "280px", className: "map-popup-shell" }).setDOMContent(zonePopup(zone, filters)),
+        );
+      } else {
+        // Grupo: al tocarlo, el mapa se acerca hasta separar los municipios.
+        name.textContent = `${group.zones.length} municipios`;
+        button.setAttribute("aria-label", `${group.zones.map((zone) => zone.name).join(", ")}: ${plural(total, "aviso", "avisos")}. Toca para acercar.`);
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const bounds = new maplibregl.LngLatBounds();
+          group.zones.forEach((zone) => bounds.extend(zone.coordinates));
+          instance.fitBounds(bounds, { padding: 90, maxZoom: 13, duration: reduced ? 0 : 800 });
+        });
+      }
+      markers.current.push(marker.addTo(instance));
     }
-  }, [load.data, mapReady, key, reduced]);
+
+    // Cabeceras sin avisos: puntos de contexto, solo donde no estorban.
+    const taken = groups.map((group) => group.point);
+    const withNotices = new Set(load.data.zones.map((zone) => zone.name));
+    for (const town of load.data.municipalities ?? []) {
+      if (withNotices.has(town.name)) continue;
+      const point = instance.project(town.coordinates);
+      if (taken.some((other) => other.dist(point) < TOWN_PX)) continue;
+      taken.push(point);
+      const element = document.createElement("div");
+      element.className = "map-town";
+      element.setAttribute("aria-hidden", "true");
+      // En la vista plana el mapa base ya escribe el nombre del pueblo: basta el punto.
+      if (relief) {
+        const label = document.createElement("span");
+        label.textContent = town.name;
+        element.append(label);
+      }
+      markers.current.push(
+        new maplibregl.Marker({ element, anchor: "top", opacityWhenCovered: "0.85" }).setLngLat(town.coordinates).addTo(instance),
+      );
+    }
+  }, [load.data, mapReady, key, view, reduced, relief]);
 
   // Pasar el cursor por una tarjeta de la lista resalta su círculo en el mapa.
   useEffect(() => {
-    markers.current.forEach((marker, name) =>
-      marker.getElement().querySelector(".map-zone-marker")?.classList.toggle("is-active", name === active),
-    );
-  }, [active]);
+    markers.current.forEach((marker) => {
+      const button = marker.getElement().querySelector<HTMLElement>(".map-zone-marker");
+      button?.classList.toggle("is-active", Boolean(active) && button.dataset.zone === active);
+    });
+  }, [active, view]);
 
   function showSierra() {
     const instance = map.current;
-    if (!instance) return;
-    instance.easeTo({ ...sierraCamera(instance, relief), duration: reduced ? 0 : 1200 });
+    if (instance) instance.easeTo({ ...sierraCamera(instance, relief), duration: reduced ? 0 : 1000 });
   }
 
   const zones = load.data?.zones ?? [];
@@ -328,27 +387,27 @@ export function MapCatalogue({ filters }: { filters: Record<string, string> }) {
       <div className={`map-frame ${relief ? "is-3d" : ""}`}>
         <div ref={container} className="map-canvas" aria-hidden={mapError} />
         {!mapError && (
-          <>
-            <div className="map-toolbar" role="group" aria-label="Vista del mapa">
-              <button type="button" aria-pressed={relief} onClick={() => setRelief(true)}>
-                <Mountain size={16} aria-hidden="true" /> Relieve 3D
-              </button>
-              <button type="button" aria-pressed={!relief} onClick={() => setRelief(false)}>
-                <MapIcon size={16} aria-hidden="true" /> Plano
-              </button>
-              <button type="button" onClick={showSierra} aria-label="Ver toda la Sierra">
-                <LocateFixed size={16} aria-hidden="true" />
-              </button>
-            </div>
-            <div className="map-legend" aria-hidden="true">
-              <span><i className="is-lost" /> Se buscan</span>
-              <span><i className="is-found" /> Encontrados</span>
-              <span><i className="is-town" /> Cabecera sin avisos</span>
-            </div>
-          </>
+          <div className="map-toolbar" role="group" aria-label="Vista del mapa">
+            <button type="button" aria-pressed={!relief} onClick={() => setRelief(false)}>
+              <MapIcon size={16} aria-hidden="true" /> Plano
+            </button>
+            <button type="button" aria-pressed={relief} onClick={() => setRelief(true)}>
+              <Mountain size={16} aria-hidden="true" /> Relieve
+            </button>
+            <button type="button" onClick={showSierra} aria-label="Ver toda la Sierra">
+              <LocateFixed size={16} aria-hidden="true" />
+            </button>
+          </div>
         )}
         {mapError && <div className="map-unavailable">El mapa visual no está disponible en este navegador. Puedes usar la lista de zonas de abajo.</div>}
       </div>
+      {!mapError && (
+        <div className="map-legend" aria-hidden="true">
+          <span><i className="is-lost" /> Se buscan</span>
+          <span><i className="is-found" /> Encontrados</span>
+          <span><i className="is-group" /> Varios municipios: toca para acercar</span>
+        </div>
+      )}
       {load.error ? <ErrorBox message={load.error} retry={load.reload} /> : load.loading ? (
         <p className="loading-message">Cargando zonas…</p>
       ) : (
@@ -362,7 +421,7 @@ export function MapCatalogue({ filters }: { filters: Record<string, string> }) {
                 onMouseLeave={() => setActive(null)}
                 onFocus={() => setActive(zone.name)}
                 onBlur={() => setActive(null)}
-                style={{ "--found": `${Math.round((zone.found / zone.total) * 100)}%` } as CSSProperties}
+                style={{ "--found": foundShare(zone.found, zone.total) } as CSSProperties}
               >
                 <span className="map-zone-ring" aria-hidden="true" />
                 <strong>{zone.name}</strong>

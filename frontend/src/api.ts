@@ -2,6 +2,10 @@ export type User = {
   id: number;
   email: string;
   is_staff: boolean;
+  first_name: string;
+  last_name: string;
+  avatar_url: string;
+  date_joined: string;
   email_verified: boolean;
   email_notifications: boolean;
   has_password: boolean;
@@ -278,6 +282,8 @@ export const api = {
     post<{ ok: boolean; already?: boolean }>("/api/auth/verify-email/resend/"),
   setEmailNotifications: (email_notifications: boolean) =>
     post<{ user: User }>("/api/auth/preferences/", { email_notifications }),
+  updateProfile: (first_name: string, last_name: string) =>
+    post<{ user: User }>("/api/auth/profile/", { first_name, last_name }),
   changePassword: (current: string, password: string) =>
     post<{ user: User }>("/api/auth/password/", { current, password }),
   photos: (reportId: string) => request<Photo[]>(`/api/reports/${reportId}/photos/`),

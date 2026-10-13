@@ -8,3 +8,4 @@ Disallow: /restablecer
 Disallow: /verificar
 Disallow: /api/
 Disallow: /admin/
+Disallow: /perfil

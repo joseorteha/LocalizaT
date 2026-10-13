@@ -44,11 +44,19 @@ def read_json(request):
 
 def identity(user):
     return {"id": user.pk, "email": user.email, "is_staff": user.is_staff,
+            "first_name": user.first_name, "last_name": user.last_name,
+            "avatar_url": user.avatar_url, "date_joined": user.date_joined,
             "email_verified": user.email_verified,
             "email_notifications": user.email_notifications,
             "has_password": user.has_usable_password(),
             "is_point_member": user.custody_points.filter(active=True).exists(),
             "point_ids": list(user.custody_points.filter(active=True).values_list("id", flat=True))}
+
+
+def google_picture(info):
+    """Solo aceptamos fotos servidas por Google con HTTPS."""
+    picture = str(info.get("picture", ""))[:500]
+    return picture if picture.startswith("https://") and ".googleusercontent.com/" in picture else ""
 
 
 def user_from_uid(uid):
@@ -168,8 +176,12 @@ def google_login(request):
     user, created = User.objects.get_or_create(email=email)
     if created:
         user.set_unusable_password()
+    # El nombre solo se toma de Google si la persona no escribió otro en su perfil.
+    if not user.first_name and not user.last_name:
         user.first_name = str(info.get("given_name", ""))[:150]
         user.last_name = str(info.get("family_name", ""))[:150]
+    # La foto se actualiza en cada entrada: si la cambia en Google, aquí también.
+    user.avatar_url = google_picture(info) or user.avatar_url
     # Google ya comprobó que el correo es de esta persona.
     user.email_verified = True
     user.save()
@@ -265,6 +277,26 @@ def preferences(request):
         return JsonResponse({"error": "Indica si quieres recibir avisos por correo."}, status=400)
     request.user.email_notifications = data["email_notifications"]
     request.user.save(update_fields=["email_notifications"])
+    return JsonResponse({"user": identity(request.user)})
+
+
+@require_POST
+@csrf_protect
+def update_profile(request):
+    """Nombre que ve el equipo y que aparece en el perfil. El correo no se cambia aquí."""
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Entra a tu cuenta."}, status=401)
+    data = read_json(request)
+    if data is None:
+        return JsonResponse({"error": "Envía un objeto JSON válido."}, status=400)
+    first = " ".join(str(data.get("first_name", "")).split())
+    last = " ".join(str(data.get("last_name", "")).split())
+    if not first:
+        return JsonResponse({"error": "Escribe tu nombre."}, status=400)
+    if len(first) > 150 or len(last) > 150:
+        return JsonResponse({"error": "El nombre es demasiado largo."}, status=400)
+    request.user.first_name, request.user.last_name = first, last
+    request.user.save(update_fields=["first_name", "last_name"])
     return JsonResponse({"user": identity(request.user)})
 
 

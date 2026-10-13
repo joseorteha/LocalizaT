@@ -15,7 +15,8 @@ const MOODS: [FeedbackMood, string, string][] = [
 ];
 
 // «¿Algo no se entendió?»: la forma más rápida de saber dónde se atora la gente.
-export function FeedbackButton({ floating = false }: { floating?: boolean }) {
+export function FeedbackButton({ variant = "footer" }: { variant?: "footer" | "floating" | "menu" }) {
+  const floating = variant === "floating";
   const [open, setOpen] = useState(false);
   const [mood, setMood] = useState<FeedbackMood>("confused");
   const { busy, error, run } = useAction();
@@ -37,11 +38,11 @@ export function FeedbackButton({ floating = false }: { floating?: boolean }) {
     <>
       <button
         type="button"
-        className={floating ? "feedback-fab" : "footer-feedback"}
+        className={floating ? "feedback-fab" : variant === "menu" ? "install-menu-button" : "footer-feedback"}
         onClick={() => setOpen(true)}
         aria-label={t("feedback.open")}
       >
-        <MessageCircleQuestion size={floating ? 20 : 16} aria-hidden="true" />
+        <MessageCircleQuestion size={variant === "footer" ? 16 : 20} aria-hidden="true" />
         <span>{t("feedback.open")}</span>
       </button>
       <Modal

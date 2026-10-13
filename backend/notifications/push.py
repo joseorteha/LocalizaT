@@ -4,9 +4,18 @@ from datetime import timedelta
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from py_vapid import Vapid
 from pywebpush import WebPushException, webpush
 
 from .models import PushDelivery
+
+
+def vapid_key():
+    """La clave privada VAPID en PEM (-----BEGIN…) o en base64; pywebpush solo entiende la segunda."""
+    key = settings.VAPID_PRIVATE_KEY.strip()
+    if "-----BEGIN" in key:
+        return Vapid.from_pem(key.encode())
+    return key
 
 
 def process_next_push():
@@ -32,7 +41,7 @@ def process_next_push():
             data=json.dumps({"title": "Posible coincidencia en LocalizaT",
                              "body": "Hay un aviso compatible con tu reporte. Revísalo en tu espacio.",
                              "url": "/mi-espacio?section=alerts"}),
-            vapid_private_key=settings.VAPID_PRIVATE_KEY,
+            vapid_private_key=vapid_key(),
             vapid_claims={"sub": settings.VAPID_SUBJECT},
             ttl=3600,
             timeout=5,
