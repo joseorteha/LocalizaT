@@ -25,6 +25,10 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     username = None
     email = models.EmailField("correo electrónico", unique=True)
+    # Solo se mandan avisos a correos comprobados: así nadie llena de correos
+    # a otra persona escribiendo su dirección al registrarse.
+    email_verified = models.BooleanField("correo verificado", default=False)
+    email_notifications = models.BooleanField("recibir avisos por correo", default=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
