@@ -17,7 +17,7 @@ services:
 
   api:
     build: ./backend
-    command: sh -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "python manage.py migrate --noinput && python manage.py createcachetable && python manage.py runserver 0.0.0.0:8000"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-localizat}
       POSTGRES_USER: ${POSTGRES_USER:-localizat}
@@ -31,6 +31,13 @@ services:
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-https://localizat.test}
+      # Correo saliente (opcional en desarrollo; sin EMAIL_HOST se imprime en el registro).
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-LocalizaT <no-responder@localizat.test>}
+      SITE_URL: ${SITE_URL:-http://localhost:5173}
     volumes:
       - ./backend:/app
     ports:
@@ -60,6 +67,13 @@ services:
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-https://localizat.test}
+      # Correo saliente (opcional en desarrollo; sin EMAIL_HOST se imprime en el registro).
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-LocalizaT <no-responder@localizat.test>}
+      SITE_URL: ${SITE_URL:-http://localhost:5173}
       MATCHING_ENGINE: ${MATCHING_ENGINE:-semantic}
       MATCHING_MODEL_CACHE: /models
     volumes:
