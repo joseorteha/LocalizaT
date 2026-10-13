@@ -5,6 +5,7 @@ import { PageIntro } from "../../components/ui";
 import { MyReports } from "./MyReports";
 import { MyClaims } from "./MyClaims";
 import { MyNotices } from "./MyNotices";
+import { VerifyBanner } from "./VerifyBanner";
 
 export function Dashboard() {
   const [params, setParams] = useSearchParams();
@@ -27,6 +28,7 @@ export function Dashboard() {
           Nuevo reporte
         </Link>
       </PageIntro>
+      <VerifyBanner />
       {user && (user.is_staff || user.is_point_member) && (
         <Link className="operator-link" to="/operacion">
           <ShieldCheck size={18} />
