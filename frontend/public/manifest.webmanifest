@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "LocalizaT",
   "short_name": "LocalizaT",
   "description": "Objetos perdidos y encontrados en la Sierra de Zongolica",
@@ -50,5 +51,6 @@
       "short_name": "Explorar",
       "url": "/explorar"
     }
-  ]
+  ],
+  "orientation": "portrait"
 }
