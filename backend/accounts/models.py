@@ -29,6 +29,8 @@ class User(AbstractUser):
     # a otra persona escribiendo su dirección al registrarse.
     email_verified = models.BooleanField("correo verificado", default=False)
     email_notifications = models.BooleanField("recibir avisos por correo", default=True)
+    # Foto de perfil que comparte Google al entrar (vacío con correo y contraseña).
+    avatar_url = models.URLField("foto de perfil", max_length=500, blank=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []

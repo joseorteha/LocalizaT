@@ -5,9 +5,11 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { watchErrors } from "./errors";
 import { LanguageProvider } from "./i18n";
+import { registerServiceWorker } from "./pwa";
 import "./styles/index.css";
 
 watchErrors();
+registerServiceWorker();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

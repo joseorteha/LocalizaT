@@ -264,7 +264,11 @@ main {
 }
 .footer-bottom div {
   display: flex;
-  gap: 22px;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+}
+.footer-bottom div > * {
+  white-space: nowrap;
 }
 .footer-bottom a:hover {
   color: var(--lime-300);

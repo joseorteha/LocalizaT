@@ -35,6 +35,8 @@ import {
 import { api, type User } from "./api";
 import { GoogleButton } from "./GoogleButton";
 import { FeedbackButton } from "./components/FeedbackButton";
+import { InstallButton } from "./components/InstallButton";
+import { Avatar, displayName } from "./components/Avatar";
 import { nahuatlReady, useLanguage, useT } from "./i18n";
 import { flushReports } from "./outbox";
 import { Privacy } from "./pages/Privacy";
@@ -80,6 +82,11 @@ const ResetPassword = lazy(() =>
 const VerifyEmail = lazy(() =>
   import("./pages/Account").then((module) => ({
     default: module.VerifyEmail,
+  })),
+);
+const Profile = lazy(() =>
+  import("./pages/Profile").then((module) => ({
+    default: module.Profile,
   })),
 );
 const Operations = lazy(() =>
@@ -433,6 +440,7 @@ export default function App() {
       "/operacion": "Panel del equipo",
       "/restablecer": "Cambiar contraseña",
       "/verificar": "Confirmar correo",
+      "/perfil": "Mi perfil",
     };
     const title =
       titles[location.pathname] ??
@@ -471,6 +479,7 @@ export default function App() {
         unread,
         refreshUnread: () => setUnreadVersion((value) => value + 1),
         updateUser: setUser,
+        signOut,
       }}
     >
       <a className="skip-link" href="#main">
@@ -498,6 +507,7 @@ export default function App() {
               {t("nav.home")}
             </NavLink>
             <NavLink to="/explorar" viewTransition>{t("nav.explore")}</NavLink>
+            {user && <NavLink to="/mi-espacio" viewTransition>{t("nav.space")}</NavLink>}
             <Link
               to="/#como-funciona"
               onClick={(event) => {
@@ -538,9 +548,9 @@ export default function App() {
                     </span>
                   )}
                 </Link>
-                <Link to="/mi-espacio" className="account-button">
-                  <span className="avatar">{user.email[0].toUpperCase()}</span>
-                  <span>{t("nav.space")}</span>
+                <Link to="/perfil" className="account-button" aria-label="Mi perfil" title="Mi perfil">
+                  <Avatar user={user} />
+                  <span>{user.first_name || displayName(user)}</span>
                 </Link>
                 <button
                   className="icon-button logout-nav"
@@ -574,6 +584,7 @@ export default function App() {
             <Link to="/">{t("nav.home")}</Link>
             <Link to="/explorar">{t("nav.explore")}</Link>
             <Link to="/mi-espacio">{t("nav.space")}</Link>
+            {user && <Link to="/perfil">Mi perfil</Link>}
             {user && (user.is_staff || user.is_point_member) && (
               <Link to="/operacion">Panel del equipo</Link>
             )}
@@ -581,6 +592,8 @@ export default function App() {
               {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
               {themeLabel}
             </button>
+            <InstallButton />
+            <FeedbackButton variant="menu" />
             {user && <button onClick={signOut}>Cerrar sesión</button>}
           </nav>
         )}
@@ -606,6 +619,14 @@ export default function App() {
               }
             />
             <Route path="/reportar" element={<ReportWizard />} />
+            <Route
+              path="/perfil"
+              element={
+                <Protected>
+                  <Profile />
+                </Protected>
+              }
+            />
             <Route path="/privacidad" element={<Privacy />} />
             <Route path="/terminos" element={<Terms />} />
             <Route path="/restablecer" element={<ResetPassword />} />
@@ -669,6 +690,7 @@ export default function App() {
               <Link to="/operacion">Panel del equipo</Link>
             )}
             <FeedbackButton />
+            <InstallButton variant="footer" />
             {nahuatlReady && (
               <button
                 type="button"
@@ -697,7 +719,7 @@ export default function App() {
           {t("nav.space")}
         </NavLink>
       </nav>
-      {location.pathname !== "/reportar" && <FeedbackButton floating />}
+      {location.pathname !== "/reportar" && <FeedbackButton variant="floating" />}
       <AuthDialog
         mode={authMode}
         setMode={setAuthMode}

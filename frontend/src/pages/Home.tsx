@@ -11,6 +11,7 @@ import {
 import { api } from "../api";
 import { useLoad, usePrefersReducedMotion } from "../lib";
 import { useT } from "../i18n";
+import { InstallButton } from "../components/InstallButton";
 import { RouteScene } from "../components/Art";
 import {
   EmptyState,
@@ -85,6 +86,7 @@ export function Home() {
               <ShieldCheck size={17} />
               <span>{t("home.trust")}</span>
             </div>
+            <InstallButton variant="card" />
           </div>
         </div>
         <div className="hero-visual">

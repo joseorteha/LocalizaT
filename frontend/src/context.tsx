@@ -11,6 +11,7 @@ export const SessionContext = createContext<{
   refreshUnread: () => void;
   // Para reflejar al instante cambios de la cuenta (correo verificado, avisos…).
   updateUser: (user: User) => void;
+  signOut: () => Promise<void>;
 }>({
   user: null,
   sessionLoading: true,
@@ -19,5 +20,6 @@ export const SessionContext = createContext<{
   unread: 0,
   refreshUnread: () => {},
   updateUser: () => {},
+  signOut: async () => {},
 });
 export const useApp = () => useContext(SessionContext);
