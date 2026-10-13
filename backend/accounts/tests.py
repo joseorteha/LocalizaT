@@ -1,4 +1,5 @@
 import re
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
@@ -100,3 +101,40 @@ class AccountSecurityTests(TestCase):
         self.assertEqual(ok.status_code, 200)
         # La sesión sigue abierta tras cambiarla.
         self.assertEqual(self.client.get("/api/auth/me/").json()["user"]["email"], "ana@example.com")
+
+
+class ProfileTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+
+    def google(self, **info):
+        data = {"email": "maria@gmail.com", "email_verified": True, "given_name": "María", "family_name": "López",
+                "picture": "https://lh3.googleusercontent.com/a/foto-de-maria=s96-c", **info}
+        with patch("google.oauth2.id_token.verify_oauth2_token", return_value=data):
+            return self.client.post("/api/auth/google/", {"credential": "token-de-prueba"}, format="json")
+
+    def test_google_login_saves_name_and_photo(self):
+        user = self.google().json()["user"]
+        self.assertEqual((user["first_name"], user["last_name"]), ("María", "López"))
+        self.assertEqual(user["avatar_url"], "https://lh3.googleusercontent.com/a/foto-de-maria=s96-c")
+        self.assertTrue(user["email_verified"])
+        self.assertFalse(user["has_password"])
+
+    def test_only_google_hosted_photos_are_accepted(self):
+        user = self.google(picture="https://sitio-raro.example/espia.png").json()["user"]
+        self.assertEqual(user["avatar_url"], "")
+
+    def test_name_edited_in_profile_is_kept_after_next_google_login(self):
+        self.google()
+        updated = self.client.post("/api/auth/profile/", {"first_name": "  Mari ", "last_name": ""}, format="json")
+        self.assertEqual(updated.status_code, 200)
+        self.assertEqual(updated.json()["user"]["first_name"], "Mari")
+        again = self.google(picture="https://lh3.googleusercontent.com/a/foto-nueva").json()["user"]
+        self.assertEqual(again["first_name"], "Mari")
+        self.assertEqual(again["avatar_url"], "https://lh3.googleusercontent.com/a/foto-nueva")
+
+    def test_profile_requires_session_and_a_name(self):
+        self.assertEqual(self.client.post("/api/auth/profile/", {"first_name": "Ana"}, format="json").status_code, 401)
+        self.google()
+        self.assertEqual(self.client.post("/api/auth/profile/", {"first_name": "   "}, format="json").status_code, 400)
