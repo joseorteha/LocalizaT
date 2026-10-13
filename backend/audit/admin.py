@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AuditEvent
+from .models import AuditEvent, Feedback
 
 
 @admin.register(AuditEvent)
@@ -18,3 +18,11 @@ class AuditEventAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(Feedback)
+class FeedbackAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "mood", "page", "connection", "resolved")
+    list_filter = ("mood", "resolved", "connection")
+    search_fields = ("message", "page")
+    readonly_fields = ("user", "mood", "message", "page", "device", "connection", "created_at")
