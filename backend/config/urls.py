@@ -26,6 +26,7 @@ urlpatterns = [
     path("api/auth/verify-email/resend/", accounts_api.resend_verification, name="verify-email-resend"),
     path("api/auth/preferences/", accounts_api.preferences, name="preferences"),
     path("api/auth/password/", accounts_api.change_password, name="change-password"),
+    path("api/auth/profile/", accounts_api.update_profile, name="profile"),
     path("api/reports/", reports_api.ReportListCreateView.as_view(), name="reports"),
     path("api/reports/<uuid:pk>/", reports_api.ReportDetailView.as_view(), name="report-detail"),
     path("api/reports/<uuid:pk>/close/", reports_api.CloseOwnReportView.as_view(), name="report-close"),
