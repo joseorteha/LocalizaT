@@ -9,6 +9,8 @@ export const SessionContext = createContext<{
   // Novedades sin leer, para la campana y la pestaña de Mi espacio.
   unread: number;
   refreshUnread: () => void;
+  // Para reflejar al instante cambios de la cuenta (correo verificado, avisos…).
+  updateUser: (user: User) => void;
 }>({
   user: null,
   sessionLoading: true,
@@ -16,5 +18,6 @@ export const SessionContext = createContext<{
   toast: () => {},
   unread: 0,
   refreshUnread: () => {},
+  updateUser: () => {},
 });
 export const useApp = () => useContext(SessionContext);

@@ -5,6 +5,19 @@
 {$DOMAIN} {
 	encode gzip zstd
 
+	# Encabezados de seguridad para todo el sitio.
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "geolocation=(), microphone=(), payment=()"
+		-Server
+	}
+
+	# Fotos de hasta 8 MB más el resto del formulario.
+	request_body {
+		max_size 12MB
+	}
+
 	handle /api/* {
 		reverse_proxy api:8000
 	}
@@ -19,6 +32,13 @@
 	# rutas como /explorar sin que dé 404.
 	handle {
 		root * /srv
+		# Los archivos con huella (assets/) se guardan un año. Todo lo demás
+		# (index.html, rutas de la app, service worker) se revalida siempre,
+		# para que la gente reciba la versión nueva en cuanto se publica.
+		@hashed path /assets/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		@fresh not path /assets/*
+		header @fresh Cache-Control "no-cache"
 		try_files {path} /index.html
 		file_server
 	}

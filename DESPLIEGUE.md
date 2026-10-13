@@ -128,6 +128,57 @@ Desde el celular, abre **https://localizat.duckdns.org**:
 
 ---
 
+## Parte F · Correo, monitoreo y respaldos
+
+Estas tres piezas hacen que LocalizaT avise a la gente, que tú te enteres si
+algo falla y que no se pierdan datos. Las tres son gratis.
+
+### 1. Correo (avisos de coincidencias, recuperar contraseña, verificar correo)
+1. Crea una cuenta gratis en **Brevo** (300 correos al día) o Resend.
+2. En Brevo: **Remitentes y dominios › Agregar remitente** y verifica el correo
+   desde el que saldrán los avisos.
+3. En **SMTP y API › SMTP** copia el usuario y genera una clave SMTP.
+4. En el servidor, edita `.env.prod`:
+   ```
+   EMAIL_HOST=smtp-relay.brevo.com
+   EMAIL_PORT=587
+   EMAIL_HOST_USER=tu-usuario-smtp@smtp-brevo.com
+   EMAIL_HOST_PASSWORD=la-clave-smtp
+   DEFAULT_FROM_EMAIL=LocalizaT <el-correo-que-verificaste@ejemplo.com>
+   ```
+5. `docker compose -f compose.prod.yaml up -d` y prueba «¿Olvidaste tu
+   contraseña?» con tu cuenta. Si no llega, mira
+   `docker compose -f compose.prod.yaml logs worker | grep -i correo`.
+
+Sin `EMAIL_HOST` todo funciona, pero los correos solo se escriben en el registro
+del worker y no salen.
+
+### 2. Monitoreo
+- **¿Se cayó el sitio?** Crea una cuenta gratis en **UptimeRobot** y un monitor
+  tipo *Keyword* a `https://localizat.duckdns.org/api/health/` cada 5 minutos,
+  buscando la palabra `"worker": "ok"`. Te llega un correo si la página no abre
+  **o** si el worker (coincidencias, push y correos) dejó de trabajar.
+- **¿Hay errores?** Crea un proyecto *Django* gratis en **sentry.io**, copia su
+  DSN a `SENTRY_DSN=` en `.env.prod` y reinicia. Ahí verás los errores del
+  servidor y también los que vean las personas en su navegador. No se envían
+  correos ni datos personales.
+
+### 3. Respaldos
+Neon gratis solo deja **volver 6 horas atrás** y no hace respaldos programados.
+El script `deploy/respaldar.sh` guarda cada día la base de datos y las fotos
+privadas en el servidor, y conserva 14 días:
+```bash
+chmod +x deploy/respaldar.sh deploy/restaurar.sh
+sh deploy/respaldar.sh          # pruébalo una vez a mano
+crontab -e                      # y prográmalo:
+30 3 * * * cd ~/LocalizaT && sh deploy/respaldar.sh >> deploy/respaldos/registro.log 2>&1
+```
+Para restaurar: `sh deploy/restaurar.sh deploy/respaldos/base_FECHA.dump deploy/respaldos/fotos_FECHA.tar.gz`
+(primero en una rama nueva de Neon si puedes). De vez en cuando copia la carpeta
+`deploy/respaldos/` fuera del servidor (por ejemplo con `scp` a tu computadora).
+
+---
+
 ## Mantenimiento
 
 **Actualizar** cuando subas cambios a `main`:
@@ -135,11 +186,16 @@ Desde el celular, abre **https://localizat.duckdns.org**:
 cd LocalizaT && git pull && docker compose -f compose.prod.yaml up -d --build
 ```
 
-**Respaldo de la base** (guárdalo seguido):
+**Cifras del servicio** (para informes): en el panel del equipo, sección
+**Resumen**, botón «Descargar cifras».
+
+**Medir el motor de coincidencias con casos reales** (cuando ya haya
+devoluciones aprobadas):
 ```bash
-docker run --rm -e PGPASSWORD=TU_PASSWORD postgres:17-alpine \
-  pg_dump -h TU_HOST_NEON -U neondb_owner neondb > respaldo-$(date +%F).sql
+docker compose -f compose.prod.yaml exec worker python manage.py export_matching_cases --salida /tmp/casos_reales.json
+docker compose -f compose.prod.yaml exec worker python manage.py evaluate_matching --cases /tmp/casos_reales.json --details
 ```
+El archivo tiene descripciones privadas: no lo saques del servidor ni lo subas a Git.
 
 > El VPS no se duerme: el backend queda encendido 24/7. Neon sí duerme con
 > inactividad, pero despierta en menos de un segundo.

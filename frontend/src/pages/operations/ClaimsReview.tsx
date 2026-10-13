@@ -156,6 +156,14 @@ export function ClaimsReview() {
                 </div>
               </div>
               {check && (
+                <ComparePhotos
+                  groups={[
+                    ["FOTOS DE QUIEN LO ENCONTRÓ", check.found.photos ?? []],
+                    ["FOTOS DE QUIEN LO RECLAMA", check.lost?.photos ?? []],
+                  ]}
+                />
+              )}
+              {check && (
                 <div className="contact-box">
                   <span className="tiny-label">
                     PARA COORDINAR LA ENTREGA (NO COMPARTIR)
@@ -241,5 +249,29 @@ export function ClaimsReview() {
         )}
       </Modal>
     </>
+  );
+}
+
+// Fotos privadas de ambos reportes, para comparar con el detalle secreto.
+function ComparePhotos({ groups }: { groups: [string, string[]][] }) {
+  const withPhotos = groups.filter(([, urls]) => urls.length);
+  if (!withPhotos.length) return null;
+  return (
+    <div className="compare-photos">
+      {withPhotos.map(([label, urls]) => (
+        <div key={label}>
+          <span className="tiny-label">{label}</span>
+          <div className="photo-grid">
+            {urls.map((url) => (
+              <figure key={url}>
+                <a href={url} target="_blank" rel="noreferrer">
+                  <img src={url} alt="Foto privada del objeto" loading="lazy" />
+                </a>
+              </figure>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

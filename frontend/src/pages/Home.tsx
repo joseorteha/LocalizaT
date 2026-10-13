@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { api } from "../api";
 import { useLoad, usePrefersReducedMotion } from "../lib";
+import { useT } from "../i18n";
 import { RouteScene } from "../components/Art";
 import {
   EmptyState,
@@ -23,6 +24,8 @@ export function Home() {
   const latest = useLoad(() => api.publicReports({ page_size: "3" }));
   const reduced = usePrefersReducedMotion();
   const location = useLocation();
+  const t = useT();
+  const titleLines = t("home.title").split("|");
   useEffect(() => {
     if (location.hash)
       document
@@ -56,39 +59,31 @@ export function Home() {
         <div className="hero-copy">
           <p className="eyebrow">
             <span />
-            OBJETOS PERDIDOS Y ENCONTRADOS
+            {t("home.eyebrow")}
           </p>
-          <h1 aria-label="Lo encontrado puede volver.">
-            {["Lo encontrado", "puede", "volver."].map((word, index) => (
+          <h1 aria-label={titleLines.join(" ")}>
+            {titleLines.map((word, index) => (
               <span className={`hero-line line-${index}`} key={word}>
                 <span>{word}</span>
               </span>
             ))}
           </h1>
           <div>
-            <p className="hero-description">
-              Busca lo que perdiste o reporta lo que encontraste en la Sierra de
-              Zongolica. Aquí puedes seguir tu caso y ayudar a que un objeto
-              vuelva a su dueño.
-            </p>
+            <p className="hero-description">{t("home.description")}</p>
             <div className="hero-actions">
               <Link className="btn btn-primary" to="/reportar?kind=lost">
-                Perdí algo <ArrowUpRight size={19} />
+                {t("home.lost")} <ArrowUpRight size={19} />
               </Link>
               <Link className="btn btn-accent" to="/reportar?kind=found">
-                Encontré algo <ArrowUpRight size={19} />
+                {t("home.found")} <ArrowUpRight size={19} />
               </Link>
             </div>
             <Link className="text-link hero-browse" to="/explorar?kind=found">
-              Primero quiero ver los objetos encontrados{" "}
-              <ArrowRight size={17} />
+              {t("home.browse")} <ArrowRight size={17} />
             </Link>
             <div className="hero-trust">
               <ShieldCheck size={17} />
-              <span>
-                Tú eliges si compartes un aviso. Tu correo y tu detalle secreto
-                no se publican.
-              </span>
+              <span>{t("home.trust")}</span>
             </div>
           </div>
         </div>
@@ -238,8 +233,9 @@ export function Home() {
             <summary>¿Cómo sé si apareció algo parecido?</summary>
             <p>
               Entra a Mi espacio y abre tu reporte para consultar posibles
-              coincidencias. Las novedades aparecen en la campana. También
-              puedes activar avisos en este dispositivo; no enviamos correo ni SMS.
+              coincidencias. Las novedades aparecen en la campana y, si
+              confirmaste tu correo, también te escribimos. Además puedes activar
+              avisos en este dispositivo. No enviamos SMS.
             </p>
           </details>
           <details>

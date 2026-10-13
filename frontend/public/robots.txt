@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+# Áreas privadas: no tienen nada que indexar.
+Disallow: /mi-espacio
+Disallow: /mis-reportes/
+Disallow: /operacion
+Disallow: /restablecer
+Disallow: /verificar
+Disallow: /api/
+Disallow: /admin/

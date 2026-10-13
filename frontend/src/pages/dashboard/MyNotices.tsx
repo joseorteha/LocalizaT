@@ -6,6 +6,7 @@ import { dateLabel, useLoad } from "../../lib";
 import { useApp } from "../../context";
 import { EmptyState, ErrorBox, SkeletonCards } from "../../components/ui";
 import { PushSettings } from "./PushSettings";
+import { EmailSettings } from "./EmailSettings";
 
 const noticeKinds = {
   match: { label: "Posible coincidencia", icon: Sparkles },
@@ -108,6 +109,7 @@ export function MyNotices() {
           )}
         </div>
         <aside className="notices-side" aria-label="Configuración de avisos y ayuda">
+          <EmailSettings />
           <PushSettings />
           <div className="notice-help-card">
             <strong>¿Qué significa una coincidencia?</strong>

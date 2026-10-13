@@ -104,3 +104,5 @@ class PublicMapTests(TestCase):
         self.assertEqual(response.data["zones"][0]["total"], 1)
         self.assertNotIn("description", str(response.data))
         self.assertEqual(self.client.get("/api/public/report-map/?category=book").data["zones"], [])
+        # Las 11 cabeceras van siempre, para dar contexto aunque no tengan avisos.
+        self.assertEqual(len(response.data["municipalities"]), 11)

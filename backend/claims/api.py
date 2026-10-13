@@ -59,6 +59,8 @@ def report_context(report, include_clue=False):
         "approximate_area": report.approximate_area,
         "occurred_on": report.occurred_on,
         "owner_email": report.owner.email,
+        # Fotos privadas del objeto: ayudan al equipo a comparar.
+        "photos": [f"/api/photos/{photo.pk}/" for photo in report.photos.all()],
     }
     if include_clue:
         private = getattr(report, "private", None)

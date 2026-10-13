@@ -1,19 +1,22 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   AlertCircle,
   ArrowLeft,
   ArrowRight,
+  Camera,
   Check,
   CheckCheck,
+  CloudOff,
   EyeOff,
   Globe2,
   HandHeart,
   History,
   Search,
   ShieldCheck,
+  X,
 } from "lucide-react";
-import { api, type Kind, type Report } from "../api";
+import { api, NetworkError, type Kind, type Report, type ReportInput } from "../api";
 import { descriptionExample, suggestedSummary } from "../domain";
 import { municipalities, publicRegion } from "../geography";
 import { categories, categoryName, dateLabel, daysAgo, newId, today } from "../lib";
@@ -23,6 +26,12 @@ import { Button, ErrorBox, PageIntro } from "../components/ui";
 import { ObjectArt } from "../components/Art";
 import { PublishDialog } from "../components/PublishDialog";
 import { useApp } from "../context";
+import { useT } from "../i18n";
+import { queueReport } from "../outbox";
+import { shrinkPhoto } from "../photos";
+
+const MAX_PHOTOS = 3;
+type PendingPhoto = { file: File; url: string };
 
 const STEPS = [
   { label: "Qué pasó", hint: "Lo perdiste o lo encontraste" },
@@ -139,6 +148,14 @@ export function ReportWizard() {
   const [publishError, setPublishError] = useState("");
   const [publishing, setPublishing] = useState(false);
   const { user, sessionLoading, openAuth } = useApp();
+  const t = useT();
+  // Las fotos viven solo en memoria hasta guardarse (no van en el borrador).
+  const [photos, setPhotos] = useState<PendingPhoto[]>([]);
+  const [photoNote, setPhotoNote] = useState("");
+  const photoInput = useRef<HTMLInputElement>(null);
+  // Sin señal al guardar: se ofrece dejarlo listo para enviarse después.
+  const [offline, setOffline] = useState<null | "ask" | "queued">(null);
+  const [offlineInput, setOfflineInput] = useState<ReportInput | null>(null);
   const stepRef = useRef<HTMLDivElement>(null);
   const step = form.step;
   const hasDraft = draft.restored && (form.description.trim() !== "" || form.place.trim() !== "");
@@ -158,6 +175,10 @@ export function ReportWizard() {
     document.getElementById(`campo-${focusField}`)?.focus();
     setFocusField(null);
   }, [focusField, step]);
+  // Al salir de la página se liberan las vistas previas de las fotos.
+  const photosRef = useRef(photos);
+  photosRef.current = photos;
+  useEffect(() => () => photosRef.current.forEach((photo) => URL.revokeObjectURL(photo.url)), []);
   useEffect(() => {
     // Al terminar de crear la cuenta, el reporte se guarda sin volver a pedirlo.
     if (pendingSave && user) {
@@ -184,14 +205,69 @@ export function ReportWizard() {
     setFocusField(Object.keys(found)[0] as Field);
   }
 
+  function addPhotos(event: ChangeEvent<HTMLInputElement>) {
+    const chosen = Array.from(event.target.files ?? []).filter((file) => file.type.startsWith("image/"));
+    event.target.value = "";
+    setPhotos((current) => [
+      ...current,
+      ...chosen.slice(0, MAX_PHOTOS - current.length).map((file) => ({ file, url: URL.createObjectURL(file) })),
+    ]);
+  }
+  function removePhoto(url: string) {
+    URL.revokeObjectURL(url);
+    setPhotos((current) => current.filter((photo) => photo.url !== url));
+  }
+  async function uploadPhotos(reportId: string) {
+    let failed = 0;
+    for (const photo of photos) {
+      try {
+        await api.uploadPhoto(reportId, await shrinkPhoto(photo.file));
+      } catch {
+        failed += 1;
+      }
+    }
+    photos.forEach((photo) => URL.revokeObjectURL(photo.url));
+    setPhotos([]);
+    if (failed)
+      setPhotoNote(
+        failed === 1
+          ? "Una foto no se pudo subir. Puedes agregarla desde «Ver cómo va mi caso»."
+          : `${failed} fotos no se pudieron subir. Puedes agregarlas desde «Ver cómo va mi caso».`,
+      );
+  }
+  const basicMunicipality = () =>
+    municipalities.includes(form.municipality as (typeof municipalities)[number]) ? form.municipality : "";
+
+  function queueForLater() {
+    if (!offlineInput) return;
+    const saved = queueReport({
+      input: offlineInput,
+      publishMode: form.publishMode,
+      municipality: basicMunicipality(),
+      summary: form.summary.trim(),
+      publicArea: form.publicArea.trim(),
+      queuedAt: new Date().toISOString(),
+    });
+    if (!saved) {
+      setError("Este navegador no nos deja guardar el reporte. Inténtalo cuando vuelva la señal.");
+      return;
+    }
+    draft.clear();
+    setClue("");
+    photos.forEach((photo) => URL.revokeObjectURL(photo.url));
+    setPhotos([]);
+    setOffline("queued");
+  }
+
   function save() {
     // Un borrador recuperado pudo quedar incompleto: se revisa todo antes de enviar.
     const earlier = validate(1, form, clue);
     if (Object.keys(earlier).length) return showErrors(earlier, 1);
     const current = validate(2, form, clue);
     if (Object.keys(current).length) return showErrors(current, 2);
+    setOffline(null);
     run(async () => {
-      const report = await api.createReport({
+      const input: ReportInput = {
         client_request_id: form.requestId,
         kind: form.kind,
         category: form.category,
@@ -199,9 +275,21 @@ export function ReportWizard() {
         approximate_area: reportArea(form),
         occurred_on: form.date,
         ownership_clue: form.kind === "lost" ? clue.trim() : "",
-      });
+      };
+      let report: Report;
+      try {
+        report = await api.createReport(input);
+      } catch (caught) {
+        if (caught instanceof NetworkError) {
+          setOfflineInput(input);
+          setOffline("ask");
+          return;
+        }
+        throw caught;
+      }
       draft.clear();
       setClue("");
+      if (photos.length) await uploadPhotos(report.id);
       if (form.publishMode === "none") {
         setCreated(report);
         return;
@@ -210,12 +298,7 @@ export function ReportWizard() {
         const result =
           form.publishMode === "detailed"
             ? await api.publish(report.id, form.summary.trim(), form.publicArea.trim())
-            : await api.publishBasic(
-                report.id,
-                municipalities.includes(form.municipality as (typeof municipalities)[number])
-                  ? form.municipality
-                  : "",
-              );
+            : await api.publishBasic(report.id, basicMunicipality());
         setCreated({ ...report, ...result });
       } catch (caught) {
         // El reporte ya está guardado; solo falta corregir el aviso.
@@ -254,6 +337,32 @@ export function ReportWizard() {
     save();
   }
 
+  if (offline === "queued")
+    return (
+      <div className="page-container success-page">
+        <div className="success-orbit">
+          <CloudOff size={42} />
+        </div>
+        <h1>Tu reporte está listo para enviarse.</h1>
+        <div className="next-step next-wait success-next">
+          <p className="next-step-label">¿Qué sigue?</p>
+          <p className="next-step-text">
+            Lo guardamos en este celular. En cuanto vuelva la señal y abras
+            LocalizaT, lo enviaremos solo y te avisaremos con su número de
+            reporte. Cuando se envíe, lo borramos de este celular.
+          </p>
+        </div>
+        <div className="success-actions">
+          <Link className="btn btn-primary" to="/">
+            Ir al inicio <ArrowRight size={17} />
+          </Link>
+        </div>
+        <p className="success-footnote">
+          Si el celular es compartido, no cierres tu sesión hasta que se envíe.
+        </p>
+      </div>
+    );
+
   if (created)
     return (
       <div className="page-container success-page">
@@ -284,6 +393,7 @@ export function ReportWizard() {
             </p>
           )}
           {publishError && <ErrorBox message={publishError} />}
+          {photoNote && <p className="hint with-icon"><Camera size={16} /> {photoNote}</p>}
         </div>
         <div className="success-actions">
           {created.publication_status !== "pending" && created.publication_status !== "public" && (
@@ -379,23 +489,23 @@ export function ReportWizard() {
           <form className="form-stack" onSubmit={submit} noValidate>
             {step === 0 && (
               <>
-                <h2>¿Qué te pasó?</h2>
+                <h2>{t("wizard.question")}</h2>
                 <div className="kind-choices">
                   <button type="button" aria-pressed={form.kind === "lost"} onClick={() => change({ kind: "lost" })}>
                     <Search size={25} />
-                    <strong>Perdí algo</strong>
-                    <span>Lo estoy buscando.</span>
+                    <strong>{t("wizard.lost")}</strong>
+                    <span>{t("wizard.lostHint")}</span>
                     <span className="choice-check">{form.kind === "lost" && <Check size={13} />}</span>
                   </button>
                   <button type="button" aria-pressed={form.kind === "found"} onClick={() => change({ kind: "found" })}>
                     <HandHeart size={26} />
-                    <strong>Encontré algo</strong>
-                    <span>Quiero devolverlo.</span>
+                    <strong>{t("wizard.found")}</strong>
+                    <span>{t("wizard.foundHint")}</span>
                     <span className="choice-check">{form.kind === "found" && <Check size={13} />}</span>
                   </button>
                 </div>
                 <p className="category-heading" id="category-label">
-                  ¿Qué tipo de objeto es?
+                  {t("wizard.category")}
                 </p>
                 <div className="category-choices" role="group" aria-labelledby="category-label">
                   {categories.map((item) => (
@@ -535,6 +645,39 @@ export function ReportWizard() {
                     </p>
                   </div>
                 )}
+                <div className="photo-field">
+                  <p className="photo-field-label">
+                    Fotos del objeto <small>(opcional, hasta {MAX_PHOTOS})</small>
+                  </p>
+                  <p className="hint">
+                    {form.kind === "found"
+                      ? "Ayudan al equipo a confirmar quién es la persona dueña."
+                      : "Si tienes una foto del objeto, ayuda a comprobar que es tuyo."}{" "}
+                    Nunca se publican y les quitamos la ubicación que guarda el celular.
+                  </p>
+                  <div className="photo-grid">
+                    {photos.map((photo, index) => (
+                      <figure key={photo.url}>
+                        <img src={photo.url} alt={`Foto ${index + 1} del objeto`} />
+                        <button
+                          type="button"
+                          className="icon-button photo-remove"
+                          onClick={() => removePhoto(photo.url)}
+                          aria-label={`Quitar la foto ${index + 1}`}
+                        >
+                          <X size={16} />
+                        </button>
+                      </figure>
+                    ))}
+                    {photos.length < MAX_PHOTOS && (
+                      <button type="button" className="photo-add" onClick={() => photoInput.current?.click()}>
+                        <Camera size={22} aria-hidden="true" />
+                        <span>{photos.length ? "Otra foto" : "Agregar foto"}</span>
+                      </button>
+                    )}
+                  </div>
+                  <input ref={photoInput} type="file" accept="image/*" multiple hidden onChange={addPhotos} />
+                </div>
               </>
             )}
             {step === 2 && (
@@ -646,6 +789,28 @@ export function ReportWizard() {
               </p>
             )}
             {error && <ErrorBox message={error} />}
+            {offline === "ask" && (
+              <div className="offline-offer" role="alert">
+                <CloudOff size={22} aria-hidden="true" />
+                <div>
+                  <strong>No hay señal en este momento.</strong>
+                  <p>
+                    ¿Lo dejamos listo para que se envíe solo cuando vuelva? Se
+                    guardará en este celular, incluido tu detalle secreto, hasta
+                    que se envíe.
+                    {photos.length > 0 && " Las fotos no se guardan: agrégalas después desde tu caso."}
+                  </p>
+                  <div className="offline-offer-actions">
+                    <Button type="button" onClick={queueForLater}>
+                      Guardar para enviar después
+                    </Button>
+                    <Button type="button" variant="ghost" onClick={save}>
+                      Reintentar ahora
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="wizard-buttons">
               {step > 0 && (
                 <Button type="button" variant="ghost" disabled={busy} onClick={() => update({ step: step - 1 })}>
@@ -654,7 +819,7 @@ export function ReportWizard() {
                 </Button>
               )}
               <Button type="submit" busy={busy} disabled={step === 2 && sessionLoading}>
-                {step === 2 ? (user ? "Guardar mi reporte" : "Continuar para guardar") : "Siguiente"}
+                {step === 2 ? (user ? t("wizard.save") : "Continuar para guardar") : t("wizard.next")}
                 <ArrowRight size={18} />
               </Button>
             </div>
