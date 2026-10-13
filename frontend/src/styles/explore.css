@@ -215,8 +215,8 @@
   z-index: 2;
 }
 .map-canvas {
-  height: min(68vh, 620px);
-  min-height: 420px;
+  height: min(64vh, 600px);
+  min-height: 380px;
 }
 .map-unavailable {
   position: absolute;
@@ -271,20 +271,10 @@
   color: #fff;
 }
 .map-legend {
-  position: absolute;
-  left: 14px;
-  bottom: 14px;
-  z-index: 3;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 14px;
-  max-width: calc(100% - 120px);
-  padding: 9px 14px;
-  border-radius: var(--r-md);
-  background: var(--glass-strong);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid var(--line);
+  gap: 8px 18px;
+  margin-top: -6px;
   color: var(--ink-2);
   font-size: var(--fs-xs);
   font-weight: 700;
@@ -295,13 +285,13 @@
   gap: 6px;
 }
 .map-legend i {
-  width: 11px;
-  height: 11px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
 }
 .map-legend .is-lost { background: #2aa3b4; }
 .map-legend .is-found { background: var(--lime-400); }
-.map-legend .is-town { border: 2px solid var(--petrol-600); background: var(--surface); }
+.map-legend .is-group { border: 2px dashed var(--petrol-600); background: var(--surface); }
 
 /* ---- Marcadores: anillo = proporción encontrados (lima) / se buscan (turquesa) ---- */
 .map-zone-marker {
@@ -319,16 +309,6 @@
   box-shadow: 0 14px 30px -10px rgb(6 37 43 / 0.7), 0 0 0 3px rgb(255 255 255 / 0.95);
   cursor: pointer;
   transition: transform var(--t-base) var(--ease-spring), box-shadow var(--t-base);
-}
-.map-zone-marker::before {
-  /* Halo que «respira»: hay avisos activos aquí. */
-  content: "";
-  position: absolute;
-  inset: -8px;
-  border-radius: 50%;
-  border: 2px solid var(--lime-400);
-  opacity: 0;
-  animation: map-pulse 2.6s var(--ease-out) infinite;
 }
 .map-zone-count {
   display: grid;
@@ -362,18 +342,17 @@
   transform: scale(1.14) translateY(-3px);
   box-shadow: 0 20px 36px -12px rgb(6 37 43 / 0.8), 0 0 0 3px var(--lime-400);
 }
+/* Grupo de municipios cercanos: anillo punteado y nombre «N municipios». */
+.map-zone-marker.is-group {
+  box-shadow: 0 14px 30px -10px rgb(6 37 43 / 0.7), 0 0 0 3px rgb(255 255 255 / 0.95), 0 0 0 6px rgb(14 78 90 / 0.35);
+}
+.map-zone-marker.is-group .map-zone-name {
+  background: var(--petrol-700);
+}
 .map-zone-marker:focus-visible {
   outline: 3px solid var(--lime-400);
   outline-offset: 6px;
 }
-@keyframes map-pulse {
-  0% { transform: scale(0.85); opacity: 0.85; }
-  70%, 100% { transform: scale(1.35); opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .map-zone-marker::before { animation: none; }
-}
-
 /* Cabeceras sin avisos: contexto discreto. */
 .map-town {
   display: grid;
@@ -539,16 +518,24 @@
   margin: 0;
 }
 @media (max-width: 640px) {
+  /* En el celular: mapa más bajo para que la lista de municipios quede a la vista. */
+  .map-frame {
+    border-radius: 24px;
+  }
   .map-canvas {
-    height: 62vh;
-    min-height: 380px;
+    height: 52vh;
+    min-height: 320px;
+  }
+  .map-toolbar {
+    top: 10px;
+    left: 10px;
   }
   .map-toolbar button {
+    min-height: 36px;
     padding: 0 11px;
   }
-  .map-legend {
-    max-width: calc(100% - 28px);
-    bottom: 40px;
+  .map-zone-list {
+    grid-template-columns: 1fr;
   }
 }
 
