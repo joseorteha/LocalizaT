@@ -3,6 +3,8 @@ import { BellRing } from "lucide-react";
 import { api } from "../../api";
 import { useApp } from "../../context";
 import { currentPushSubscription, disablePush, enablePush, preparePushWorker, pushSupported } from "../../push";
+import { isIOS, isStandalone } from "../../pwa";
+import { InstallButton } from "../../components/InstallButton";
 
 export function PushSettings() {
   const { toast } = useApp();
@@ -12,6 +14,8 @@ export function PushSettings() {
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
   const [hint, setHint] = useState("");
+  // En iPhone los avisos solo existen dentro de la app instalada (iOS 16.4 o más reciente).
+  const needsInstall = isIOS() && !isStandalone();
 
   useEffect(() => {
     let active = true;
@@ -21,11 +25,15 @@ export function PushSettings() {
         if (!active) return;
         setPublicKey(config.public_key);
         if (!config.enabled) {
-          setHint("Los avisos push aún no están configurados en este entorno.");
+          setHint("Los avisos en el celular todavía no están encendidos en el servidor. Mientras tanto, te avisamos por correo y en «Novedades».");
+          return;
+        }
+        if (needsInstall) {
+          setHint("En iPhone, los avisos funcionan cuando instalas LocalizaT en tu pantalla de inicio. Instálala y ábrela desde ahí.");
           return;
         }
         if (!pushSupported()) {
-          setHint("Este navegador necesita una conexión segura. En iPhone, abre LocalizaT desde la pantalla de inicio.");
+          setHint("Este navegador no permite avisos. Prueba con Chrome en Android o instala LocalizaT en tu iPhone.");
           return;
         }
         await preparePushWorker();
@@ -34,7 +42,8 @@ export function PushSettings() {
         if (!active) return;
         setEnabled(status.subscribed);
         setAvailable(Notification.permission !== "denied");
-        if (Notification.permission === "denied") setHint("El navegador bloqueó los avisos. Puedes cambiarlo en los permisos del sitio.");
+        if (Notification.permission === "denied")
+          setHint("Bloqueaste los avisos para este sitio. Toca el candado junto a la dirección › Permisos › Notificaciones › Permitir, y recarga la página.");
       } catch {
         if (active) setHint("No pudimos preparar los avisos en este dispositivo. Recarga la página para reintentarlo.");
       } finally {
@@ -81,6 +90,7 @@ export function PushSettings() {
         {busy ? "Guardando…" : !ready ? "Preparando…" : enabled ? "Desactivar en este dispositivo" : "Activar en este dispositivo"}
       </button>
       {hint && <p className="push-settings-hint" role="status">{hint}</p>}
+      {needsInstall && <InstallButton variant="card" />}
     </section>
   );
 }
