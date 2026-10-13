@@ -77,3 +77,60 @@ class ReportPrivate(models.Model):
 
     def __str__(self):
         return f"Datos privados de {self.report.folio}"
+
+
+def private_storage():
+    # Fuera de cualquier carpeta pública: solo Django entrega estos archivos.
+    from django.core.files.storage import FileSystemStorage
+
+    return FileSystemStorage(location=settings.PRIVATE_MEDIA_ROOT, base_url=None)
+
+
+def photo_path(instance, filename):
+    return f"reportes/{instance.report_id}/{instance.id}.jpg"
+
+
+class ReportPhoto(models.Model):
+    """Foto privada del objeto: la ven solo quien hizo el reporte y el equipo."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    report = models.ForeignKey(Report, on_delete=models.CASCADE, related_name="photos")
+    image = models.FileField(storage=private_storage, upload_to=photo_path, max_length=200)
+    width = models.PositiveIntegerField()
+    height = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+
+class AbuseReport(models.Model):
+    """Denuncia de un aviso público hecha por la comunidad."""
+
+    class Reason(models.TextChoices):
+        FALSE = "false", "Parece falso o engañoso"
+        OFFENSIVE = "offensive", "Es ofensivo o inapropiado"
+        PERSONAL = "personal", "Muestra datos personales"
+        SPAM = "spam", "Es publicidad o spam"
+        OTHER = "other", "Otro motivo"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Por revisar"
+        DISMISSED = "dismissed", "Sin problema"
+        ACTIONED = "actioned", "Aviso retirado"
+
+    report = models.ForeignKey(Report, on_delete=models.CASCADE, related_name="abuse_reports")
+    reporter = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="abuse_reports")
+    # Huella de la conexión (sin guardar la IP) para no contar dos veces a la misma persona sin cuenta.
+    fingerprint = models.CharField(max_length=64)
+    reason = models.CharField(max_length=12, choices=Reason.choices)
+    details = models.CharField(max_length=300, blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.OPEN)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="resolved_abuse_reports")
+
+    class Meta:
+        ordering = ["created_at"]
+        constraints = [models.UniqueConstraint(fields=["report", "fingerprint"], name="one_abuse_report_per_person")]
+        indexes = [models.Index(fields=["status", "created_at"], name="abuse_review_idx")]
