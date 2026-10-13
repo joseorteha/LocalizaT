@@ -204,21 +204,9 @@
   border-color: var(--lime-500);
 }
 @media (max-width: 899px) {
-  /* En el celular solo el ícono, encima de la barra inferior. */
+  /* En el celular tapaba textos y tarjetas: ahí vive en el menú y en el pie de página. */
   .feedback-fab {
-    right: 14px;
-    bottom: calc(var(--bottom-nav-space) + 10px);
-    width: 44px;
-    height: 44px;
-    justify-content: center;
-    padding: 0;
-  }
-  .feedback-fab span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
+    display: none;
   }
 }
 .feedback-message {
@@ -317,4 +305,204 @@
   min-width: 4px;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--petrol-700), var(--lime-500));
+}
+
+/* ---------- Instalar la app ---------- */
+.mobile-menu .install-menu-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--brand-text);
+}
+.install-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px 14px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--sh-1);
+}
+.install-card img {
+  border-radius: 12px;
+}
+.install-card strong {
+  display: block;
+  color: var(--ink);
+}
+.install-card span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+.install-card .btn {
+  grid-column: 1 / -1;
+}
+@media (min-width: 900px) {
+  /* En computadora la tarjeta solo aparece si el navegador permite instalar. */
+  .install-card {
+    grid-template-columns: auto 1fr auto;
+  }
+  .install-card .btn {
+    grid-column: auto;
+  }
+}
+.push-settings .install-card {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+}
+.install-steps {
+  display: grid;
+  gap: 14px;
+  margin: 4px 0 14px;
+  padding: 0;
+  list-style: none;
+}
+.install-steps li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  line-height: 1.5;
+}
+.install-step-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--petrol-50);
+  color: var(--brand-text);
+}
+
+/* ---------- Avatar con foto de Google ---------- */
+.avatar {
+  flex: none;
+  overflow: hidden;
+}
+.avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---------- Mi perfil ---------- */
+.profile-page {
+  display: grid;
+  gap: 22px;
+}
+.profile-hero {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 22px;
+  padding: 24px;
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(320px 200px at 100% 0%, rgb(214 230 90 / 0.22), transparent 70%),
+    linear-gradient(150deg, var(--petrol-800), var(--petrol-950));
+  color: #fff;
+  box-shadow: var(--sh-3);
+}
+.profile-hero .avatar {
+  box-shadow: 0 0 0 4px rgb(255 255 255 / 0.9), 0 14px 30px -10px rgb(0 0 0 / 0.5);
+}
+.profile-hero-copy h2 {
+  margin: 0;
+  font-size: var(--fs-2xl);
+  letter-spacing: var(--tracking-tight);
+  color: #fff;
+  overflow-wrap: anywhere;
+}
+.profile-hero-copy p {
+  margin: 4px 0 12px;
+  color: rgb(255 255 255 / 0.78);
+  overflow-wrap: anywhere;
+}
+.profile-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.profile-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  background: rgb(255 255 255 / 0.12);
+  color: #fff;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.profile-chip.is-ok { background: rgb(127 217 164 / 0.22); color: #c9f5da; }
+.profile-chip.is-wait { background: rgb(242 199 102 / 0.22); color: #fbe3a8; }
+.profile-chip.is-team { background: var(--lime-400); color: var(--lime-ink); }
+.profile-hero-links {
+  display: grid;
+  gap: 10px;
+}
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+.profile-card {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--sh-1);
+}
+.profile-card h2 {
+  margin: 0;
+  font-size: var(--fs-lg);
+}
+.profile-notices {
+  grid-row: span 2;
+}
+.profile-name-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.profile-signout {
+  justify-self: start;
+  color: var(--danger);
+}
+@media (max-width: 899px) {
+  .profile-hero {
+    grid-template-columns: 1fr;
+    justify-items: start;
+    gap: 16px;
+    padding: 20px;
+  }
+  .profile-hero-copy,
+  .profile-hero-links {
+    width: 100%;
+  }
+  .profile-hero-links {
+    grid-template-columns: 1fr 1fr;
+  }
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+  .profile-notices {
+    grid-row: auto;
+  }
+}
+@media (max-width: 480px) {
+  .profile-name-grid,
+  .profile-hero-links {
+    grid-template-columns: 1fr;
+  }
 }
