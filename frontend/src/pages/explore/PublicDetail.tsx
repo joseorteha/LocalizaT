@@ -23,6 +23,7 @@ import {
   StatusPill,
 } from "../../components/ui";
 import { ObjectArt } from "../../components/Art";
+import { AbuseButton } from "../../components/AbuseButton";
 
 export function PublicDetail() {
   const { id = "" } = useParams();
@@ -278,6 +279,7 @@ export function PublicDetail() {
             <Share2 size={17} />
             Compartir este aviso
           </button>
+          {!isMine && <AbuseButton reportId={report.id} />}
         </div>
       </div>
       <Modal
@@ -296,8 +298,8 @@ export function PublicDetail() {
           <div className="form-stack">
             <p>
               Tu solicitud quedó registrada. Consulta la respuesta del equipo
-              en «Novedades» (la campana) o en Mi espacio. Puedes activar avisos
-              en este dispositivo; no enviamos correo ni SMS.
+              en «Novedades» (la campana) o en Mi espacio. Si confirmaste tu
+              correo, también te avisaremos por ahí.
             </p>
             <Link
               className="btn btn-primary"
